@@ -1,0 +1,12 @@
+﻿@{
+    ViewData["Title"] = "Shift Platform";
+}
+
+<div class="p-4 mb-4 bg-light rounded-3">
+    <h1 class="display-6">Multi-Tenant Shift Management Platform</h1>
+    <p class="lead">
+        Register your company, validate payment via Stripe, and start managing shifts in your tenant workspace.
+    </p>
+    <a asp-controller="Registration" asp-action="Index" class="btn btn-primary me-2">Register Company</a>
+    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary">Login</a>
+</div>
