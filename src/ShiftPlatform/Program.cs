@@ -49,7 +49,9 @@ else
 builder.Services.AddScoped<IProvisioningService, ProvisioningService>();
 builder.Services.AddScoped<ISeatService, SeatService>();
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new ShiftPlatform.Services.FlexibleTimeOnlyJsonConverter()));
 
 var app = builder.Build();
 
