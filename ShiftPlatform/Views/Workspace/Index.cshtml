@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = ViewBag.CompanyName + " Dashboard";
+    var tenantSlug = ViewBag.TenantSlug as string;
+    var isAdmin = (bool)(ViewBag.IsAdmin ?? false);
+}
+
+<h2>@ViewBag.CompanyName — Shift Dashboard</h2>
+<p class="text-muted">Showing assigned and upcoming shifts for the next @Constants.UpcomingWeeks weeks.</p>
+
+<div id="dashboard-content">
+    <div class="text-center py-4"><div class="spinner-border" role="status"></div></div>
+</div>
+
+@section Scripts {
+    <script>
+        const tenantSlug = '@tenantSlug';
+        const isAdmin = @isAdmin.ToString().ToLower();
+
+        async function loadDashboard() {
+            const res = await fetch('/api/dashboard', { credentials: 'same-origin' });
+            if (!res.ok) {
+                document.getElementById('dashboard-content').innerHTML = '<div class="alert alert-danger">Failed to load dashboard.</div>';
+                return;
+            }
+            const data = await res.json();
+            let html = '<div class="row"><div class="col-md-6"><h4>My Assigned Shifts</h4>';
+            html += renderShifts(data.assignedShifts);
+            html += '</div><div class="col-md-6"><h4>Upcoming Shifts' + (isAdmin ? ' (All)' : '') + '</h4>';
+            html += renderShifts(data.upcomingShifts);
+            html += '</div></div>';
+            document.getElementById('dashboard-content').innerHTML = html;
+        }
+
+        function renderShifts(shifts) {
+            if (!shifts.length) return '<p class="text-muted">No shifts in this window.</p>';
+            let html = '<table class="table table-sm"><thead><tr><th>Date</th><th>Time</th><th>Role</th>';
+            if (isAdmin) html += '<th>Assigned To</th>';
+            html += '</tr></thead><tbody>';
+            shifts.forEach(s => {
+                html += `<tr><td>${s.date}</td><td>${s.startTime}–${s.endTime}</td><td>${s.roleLabel}</td>`;
+                if (isAdmin) html += `<td>${s.assignedUserName || '—'}</td>`;
+                html += '</tr>';
+            });
+            return html + '</tbody></table>';
+        }
+
+        loadDashboard();
+    </script>
+}

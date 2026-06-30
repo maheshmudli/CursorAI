@@ -1,0 +1,36 @@
+@{
+    ViewData["Title"] = "Swap Requests";
+    var tenantSlug = ViewBag.TenantSlug as string;
+    var isAdmin = (bool)(ViewBag.IsAdmin ?? false);
+}
+
+<h2>Shift Swaps</h2>
+
+@if (!isAdmin)
+{
+    <div class="card mb-4">
+        <div class="card-header">Request a Swap</div>
+        <div class="card-body">
+            <form id="swap-form" class="row g-2">
+                <div class="col-md-5">
+                    <label class="form-label">Your Shift</label>
+                    <select id="requesting-assignment" class="form-select" required></select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Swap With</label>
+                    <select id="target-assignment" class="form-select" required></select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Request Swap</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<div id="swaps-table"><div class="text-center py-4"><div class="spinner-border"></div></div></div>
+
+@section Scripts {
+    <script src="~/js/swaps.js" asp-append-version="true"></script>
+    <script>initSwapsPage('@tenantSlug', @isAdmin.ToString().ToLower());</script>
+}

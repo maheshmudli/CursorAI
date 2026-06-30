@@ -1,0 +1,73 @@
+@model IEnumerable<ApplicationUser>
+@{
+    ViewData["Title"] = "User Management";
+    var tenantSlug = ViewBag.TenantSlug as string;
+}
+
+<h2>Users</h2>
+<p>Seats used: <strong>@ViewBag.UserCount</strong> / <strong>@ViewBag.SeatAllowance</strong></p>
+
+@if (!(bool)ViewBag.CanAddUser)
+{
+    <div class="alert alert-warning">
+        Seat limit reached. Purchase additional seats ($5.00 AUD each) to add more users.
+    </div>
+}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Add User</div>
+            <div class="card-body">
+                @if ((bool)ViewBag.CanAddUser)
+                {
+                    <form asp-action="Add" method="post">
+                        <input type="hidden" name="tenantSlug" value="@tenantSlug" />
+                        @Html.AntiForgeryToken()
+                        <div class="mb-2">
+                            <input name="FullName" class="form-control" placeholder="Full Name" required />
+                        </div>
+                        <div class="mb-2">
+                            <input name="Email" type="email" class="form-control" placeholder="Email" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add User</button>
+                    </form>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">Buy more seats to add users.</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Buy Seats ($5.00 AUD each)</div>
+            <div class="card-body">
+                <form asp-action="BuySeats" method="post">
+                    <input type="hidden" name="tenantSlug" value="@tenantSlug" />
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <label class="form-label">Number of seats</label>
+                        <input name="SeatCount" type="number" min="1" max="20" value="1" class="form-control" />
+                    </div>
+                    <button type="submit" class="btn btn-success">Purchase Seats</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead><tr><th>Name</th><th>Email</th><th>Temporary Password</th></tr></thead>
+    <tbody>
+    @foreach (var user in Model)
+    {
+        <tr>
+            <td>@user.FullName</td>
+            <td>@user.Email</td>
+            <td>@(user.TemporaryPassword ?? "—")</td>
+        </tr>
+    }
+    </tbody>
+</table>

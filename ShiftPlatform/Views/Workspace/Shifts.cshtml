@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Manage Shifts";
+    var tenantSlug = ViewBag.TenantSlug as string;
+}
+
+<h2>Shift Management</h2>
+
+<div class="card mb-4">
+    <div class="card-header">Create Shift</div>
+    <div class="card-body">
+        <form id="create-shift-form" class="row g-2">
+            <div class="col-md-2"><input type="date" id="shift-date" class="form-control" required /></div>
+            <div class="col-md-2"><input type="time" id="shift-start" class="form-control" required /></div>
+            <div class="col-md-2"><input type="time" id="shift-end" class="form-control" required /></div>
+            <div class="col-md-2"><input type="text" id="shift-role" class="form-control" placeholder="Role" required /></div>
+            <div class="col-md-2"><input type="text" id="shift-notes" class="form-control" placeholder="Notes" /></div>
+            <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Create</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="shifts-table"><div class="text-center py-4"><div class="spinner-border"></div></div></div>
+
+@section Scripts {
+    <script src="~/js/shifts.js" asp-append-version="true"></script>
+    <script>initShiftsPage('@tenantSlug');</script>
+}

@@ -1,0 +1,101 @@
+@model PlatformDashboardViewModel
+@{
+    ViewData["Title"] = "Platform Dashboard";
+}
+
+<h2>Platform Owner Dashboard</h2>
+
+<ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#registrations">Registrations</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#workspaces">Workspaces</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#payments">Validation Payments</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tenants">Tenants &amp; Seats</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#access">Access Records</button></li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="registrations">
+        <table class="table table-striped">
+            <thead><tr><th>ID</th><th>Company</th><th>Admin Email</th><th>Status</th><th>Submitted</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Registrations)
+            {
+                <tr><td>@r.Id</td><td>@r.CompanyName</td><td>@r.AdminEmail</td><td>@r.Status</td><td>@r.SubmittedAt.ToString("g")</td></tr>
+            }
+            </tbody>
+        </table>
+        <nav>
+            <ul class="pagination">
+                @for (var p = 1; p <= Model.TotalPages; p++)
+                {
+                    <li class="page-item @(p == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@p">@p</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+
+    <div class="tab-pane fade" id="workspaces">
+        <table class="table table-striped">
+            <thead><tr><th>Company</th><th>Route</th><th>Provisioned</th><th>Status</th></tr></thead>
+            <tbody>
+            @foreach (var w in Model.Workspaces)
+            {
+                <tr><td>@w.CompanyName</td><td><a href="@w.Route">@w.Route</a></td><td>@w.ProvisionedAt.ToString("g")</td><td>@w.Status</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tab-pane fade" id="payments">
+        <table class="table table-striped">
+            <thead><tr><th>Company</th><th>Amount</th><th>Currency</th><th>Payment Intent</th><th>Status</th></tr></thead>
+            <tbody>
+            @foreach (var p in Model.ValidationPayments)
+            {
+                <tr><td>@p.CompanyName</td><td>@(p.Amount / 100.0m)</td><td>@p.Currency.ToUpper()</td><td>@p.StripePaymentIntentId</td><td>@p.Status</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tab-pane fade" id="tenants">
+        @foreach (var t in Model.TenantSummaries)
+        {
+            <div class="card mb-3">
+                <div class="card-header">@t.CompanyName — @t.Tier tier — @t.UserCount / @t.SeatAllowance seats</div>
+                <div class="card-body">
+                    @if (t.SeatPurchases.Any())
+                    {
+                        <table class="table table-sm">
+                            <thead><tr><th>Seats</th><th>Amount</th><th>Intent</th><th>Status</th><th>Date</th></tr></thead>
+                            <tbody>
+                            @foreach (var s in t.SeatPurchases)
+                            {
+                                <tr><td>@s.SeatsAdded</td><td>@(s.Amount / 100.0m) @s.Currency.ToUpper()</td><td>@s.StripePaymentIntentId</td><td>@s.Status</td><td>@s.CreatedAt.ToString("g")</td></tr>
+                            }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No seat purchases.</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="tab-pane fade" id="access">
+        <table class="table table-striped">
+            <thead><tr><th>Company</th><th>User</th><th>Email</th><th>Last Login</th></tr></thead>
+            <tbody>
+            @foreach (var a in Model.AccessRecords)
+            {
+                <tr><td>@a.CompanyName</td><td>@a.UserName</td><td>@a.Email</td><td>@a.LastLoginAt.ToString("g")</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

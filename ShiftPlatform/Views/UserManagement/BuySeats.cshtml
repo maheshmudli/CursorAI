@@ -1,0 +1,52 @@
+@model ShiftPlatform.Controllers.Tenant.SeatPurchasePaymentViewModel
+@{
+    ViewData["Title"] = "Buy Seats";
+}
+
+<h2>Purchase @Model.SeatCount Seat(s)</h2>
+<p>Total: $@((Model.SeatCount * 5).ToString("0.00")) AUD</p>
+
+<div id="payment-message" class="alert alert-danger d-none"></div>
+<div id="payment-element" class="mb-3"></div>
+<button id="submit-payment" class="btn btn-success">Pay &amp; Add Seats</button>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('@Model.StripePublishableKey');
+        const elements = stripe.elements({ clientSecret: '@Model.ClientSecret' });
+        elements.create('payment').mount('#payment-element');
+
+        document.getElementById('submit-payment').addEventListener('click', async () => {
+            const btn = document.getElementById('submit-payment');
+            const messageEl = document.getElementById('payment-message');
+            btn.disabled = true;
+            messageEl.classList.add('d-none');
+
+            const { error, paymentIntent } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
+            if (error) {
+                messageEl.textContent = error.message;
+                messageEl.classList.remove('d-none');
+                btn.disabled = false;
+                return;
+            }
+
+            const response = await fetch('/t/@Model.TenantSlug/users/complete-seat-purchase', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ purchaseId: @Model.PurchaseId, paymentIntentId: paymentIntent.id })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                messageEl.textContent = err.message || 'Payment failed.';
+                messageEl.classList.remove('d-none');
+                btn.disabled = false;
+                return;
+            }
+
+            const data = await response.json();
+            window.location.href = data.redirectUrl;
+        });
+    </script>
+}

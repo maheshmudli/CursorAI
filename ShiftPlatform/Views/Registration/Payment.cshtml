@@ -1,0 +1,63 @@
+@model ShiftPlatform.Controllers.Platform.RegistrationPaymentViewModel
+@{
+    ViewData["Title"] = "Payment";
+    Layout = "_Layout";
+}
+
+<h2>Complete Registration Payment</h2>
+<p>Company: <strong>@Model.CompanyName</strong></p>
+<p>A one-time $1.00 AUD validation charge will be taken to confirm your card.</p>
+
+<div id="payment-message" class="alert alert-danger d-none"></div>
+<div id="payment-element" class="mb-3"></div>
+<button id="submit-payment" class="btn btn-primary">Pay $1.00 AUD &amp; Create Workspace</button>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('@Model.StripePublishableKey');
+        const elements = stripe.elements({ clientSecret: '@Model.ClientSecret' });
+        const paymentElement = elements.create('payment');
+        paymentElement.mount('#payment-element');
+
+        const submitBtn = document.getElementById('submit-payment');
+        const messageEl = document.getElementById('payment-message');
+
+        submitBtn.addEventListener('click', async () => {
+            submitBtn.disabled = true;
+            messageEl.classList.add('d-none');
+
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                redirect: 'if_required'
+            });
+
+            if (error) {
+                messageEl.textContent = error.message;
+                messageEl.classList.remove('d-none');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const response = await fetch('@Url.Action("Complete", "Registration")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    submissionId: @Model.SubmissionId,
+                    paymentIntentId: paymentIntent.id
+                })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                messageEl.textContent = err.message || 'Registration failed.';
+                messageEl.classList.remove('d-none');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const data = await response.json();
+            window.location.href = data.redirectUrl;
+        });
+    </script>
+}

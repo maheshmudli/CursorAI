@@ -1,0 +1,101 @@
+@model RegistrationViewModel
+@{
+    ViewData["Title"] = "Register Company";
+    var stripeKey = ViewBag.StripePublishableKey as string ?? "";
+}
+
+<h2>Register Your Company</h2>
+<p class="text-muted">Includes 5 user seats (you as admin plus up to 4 team members). A $1.00 AUD card validation charge is required.</p>
+
+<form asp-action="Start" method="post" id="registration-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+    <div class="card mb-3">
+        <div class="card-header">Company</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="CompanyName" class="form-label"></label>
+                <input asp-for="CompanyName" class="form-control" />
+                <span asp-validation-for="CompanyName" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Administrator (counts as 1 of 5 users)</div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label asp-for="AdminFullName" class="form-label"></label>
+                <input asp-for="AdminFullName" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="AdminEmail" class="form-label"></label>
+                <input asp-for="AdminEmail" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="AdminPassword" class="form-label"></label>
+                <input asp-for="AdminPassword" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="ConfirmPassword" class="form-label"></label>
+                <input asp-for="ConfirmPassword" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Additional Users (max 4)</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-user-btn">Add User</button>
+        </div>
+        <div class="card-body" id="additional-users">
+            @for (var i = 0; i < Model.AdditionalUsers.Count; i++)
+            {
+                <div class="row mb-2 user-row">
+                    <div class="col-md-5">
+                        <input asp-for="AdditionalUsers[i].FullName" class="form-control" placeholder="Full Name" />
+                    </div>
+                    <div class="col-md-5">
+                        <input asp-for="AdditionalUsers[i].Email" class="form-control" placeholder="Email" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger remove-user-btn">Remove</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Continue to Payment ($1.00 AUD)</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let userIndex = @Model.AdditionalUsers.Count;
+        const maxAdditional = 4;
+
+        document.getElementById('add-user-btn').addEventListener('click', () => {
+            const rows = document.querySelectorAll('.user-row').length;
+            if (rows >= maxAdditional) {
+                alert('Maximum 4 additional users allowed (5 total including admin).');
+                return;
+            }
+            const container = document.getElementById('additional-users');
+            const row = document.createElement('div');
+            row.className = 'row mb-2 user-row';
+            row.innerHTML = `
+                <div class="col-md-5"><input name="AdditionalUsers[${userIndex}].FullName" class="form-control" placeholder="Full Name" /></div>
+                <div class="col-md-5"><input name="AdditionalUsers[${userIndex}].Email" class="form-control" placeholder="Email" /></div>
+                <div class="col-md-2"><button type="button" class="btn btn-outline-danger remove-user-btn">Remove</button></div>`;
+            container.appendChild(row);
+            userIndex++;
+        });
+
+        document.getElementById('additional-users').addEventListener('click', e => {
+            if (e.target.classList.contains('remove-user-btn')) {
+                e.target.closest('.user-row').remove();
+            }
+        });
+    </script>
+}

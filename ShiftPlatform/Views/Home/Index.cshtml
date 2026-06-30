@@ -1,0 +1,39 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="text-center py-5">
+    <h1 class="display-4">Multi-Tenant Shift Management</h1>
+    <p class="lead">Register your company, provision a workspace, and manage shifts for your team.</p>
+    <div class="d-flex justify-content-center gap-3 mt-4">
+        <a class="btn btn-primary btn-lg" asp-controller="Registration" asp-action="Index">Register Your Company</a>
+        <a class="btn btn-outline-primary btn-lg" asp-controller="Account" asp-action="Login">Login</a>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Parent Platform</h5>
+                <p class="card-text">Companies register, pay a validation charge, and receive an isolated workspace.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Shift Workspace</h5>
+                <p class="card-text">Create shifts, assign team members, and handle swap requests.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Pro Seats</h5>
+                <p class="card-text">Five users included. Buy additional seats at $5 AUD each when you grow.</p>
+            </div>
+        </div>
+    </div>
+</div>
