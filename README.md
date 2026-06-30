@@ -72,6 +72,7 @@ Set in `appsettings.Development.json`, `appsettings.json`, or user secrets:
 - `Stripe:SecretKey`
 - `Stripe:PublishableKey`
 - `Stripe:WebhookSecret`
+- `Stripe:EnablePayments` (default `false`; when `false`, payments are simulated as succeeded for registration and seat purchase flows)
 
 Example local SQL Server connection:
 

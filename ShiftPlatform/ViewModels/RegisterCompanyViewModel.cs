@@ -23,7 +23,6 @@ public class RegisterCompanyViewModel
 
     public List<RegisterUserInput> Users { get; set; } = new();
 
-    [Required]
     public string StripePaymentMethodId { get; set; } = string.Empty;
 }
 

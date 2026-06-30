@@ -19,6 +19,11 @@ public class StripeWebhookController(
     [HttpPost]
     public async Task<IActionResult> Receive()
     {
+        if (!stripeOptions.Value.EnablePayments)
+        {
+            return Ok();
+        }
+
         var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
         var stripeSignature = Request.Headers["Stripe-Signature"];
         Event stripeEvent;

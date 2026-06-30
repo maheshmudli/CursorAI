@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using ShiftPlatform.Constants;
 using ShiftPlatform.Contracts;
 using ShiftPlatform.Data;
 using ShiftPlatform.Models;
 using ShiftPlatform.Models.Enums;
+using ShiftPlatform.Options;
 using ShiftPlatform.Services;
 
 namespace ShiftPlatform.Controllers.Api;
@@ -18,6 +20,7 @@ public class UsersController(
     ApplicationDbContext dbContext,
     UserManager<ApplicationUser> userManager,
     IStripePaymentService stripePaymentService,
+    IOptions<StripeOptions> stripeOptions,
     ITenantContext tenantContext) : ControllerBase
 {
     [HttpGet]
@@ -93,6 +96,10 @@ public class UsersController(
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
+        }
+        if (stripeOptions.Value.EnablePayments && string.IsNullOrWhiteSpace(request.StripePaymentMethodId))
+        {
+            return BadRequest(new { error = "Payment method is required when payments are enabled." });
         }
 
         var paymentIntent = await stripePaymentService.CreateAndConfirmPaymentIntentAsync(

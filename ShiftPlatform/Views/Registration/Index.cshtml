@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Company Registration";
     var publishableKey = ViewBag.StripePublishableKey as string ?? "";
+    var enablePayments = (bool?)ViewBag.EnablePayments ?? false;
 }
 
 <h2>Register Company</h2>
@@ -45,9 +46,16 @@
         </div>
     }
 
-    <h5 class="mt-4">Card validation payment (A$1.00)</h5>
+<h5 class="mt-4">Card validation payment (A$1.00)</h5>
+@if (enablePayments)
+{
     <div id="card-element" class="form-control"></div>
     <div id="card-errors" class="text-danger mt-2"></div>
+}
+else
+{
+    <div class="alert alert-info">Payments are disabled in configuration. Registration will skip real card charge.</div>
+}
     <input asp-for="StripePaymentMethodId" type="hidden" id="StripePaymentMethodId" />
 
     <button id="submitBtn" type="submit" class="btn btn-primary mt-3">Pay and Provision Workspace</button>
@@ -55,39 +63,42 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="https://js.stripe.com/v3/"></script>
-    <script>
-        const stripe = Stripe("@publishableKey");
-        const elements = stripe.elements();
-        const card = elements.create("card");
-        card.mount("#card-element");
+    @if (enablePayments)
+    {
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            const stripe = Stripe("@publishableKey");
+            const elements = stripe.elements();
+            const card = elements.create("card");
+            card.mount("#card-element");
 
-        const form = document.getElementById("registrationForm");
-        const submitBtn = document.getElementById("submitBtn");
-        const errorDiv = document.getElementById("card-errors");
+            const form = document.getElementById("registrationForm");
+            const submitBtn = document.getElementById("submitBtn");
+            const errorDiv = document.getElementById("card-errors");
 
-        form.addEventListener("submit", async function (event) {
-            if (document.getElementById("StripePaymentMethodId").value) {
-                return;
-            }
-            event.preventDefault();
-            submitBtn.disabled = true;
-            errorDiv.textContent = "";
+            form.addEventListener("submit", async function (event) {
+                if (document.getElementById("StripePaymentMethodId").value) {
+                    return;
+                }
+                event.preventDefault();
+                submitBtn.disabled = true;
+                errorDiv.textContent = "";
 
-            const result = await stripe.createPaymentMethod({
-                type: "card",
-                card: card,
-                billing_details: { email: document.getElementById("AdminEmail").value }
+                const result = await stripe.createPaymentMethod({
+                    type: "card",
+                    card: card,
+                    billing_details: { email: document.getElementById("AdminEmail").value }
+                });
+
+                if (result.error) {
+                    errorDiv.textContent = result.error.message;
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                document.getElementById("StripePaymentMethodId").value = result.paymentMethod.id;
+                form.submit();
             });
-
-            if (result.error) {
-                errorDiv.textContent = result.error.message;
-                submitBtn.disabled = false;
-                return;
-            }
-
-            document.getElementById("StripePaymentMethodId").value = result.paymentMethod.id;
-            form.submit();
-        });
-    </script>
+        </script>
+    }
 }

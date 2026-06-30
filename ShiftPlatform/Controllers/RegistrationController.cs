@@ -24,6 +24,7 @@ public class RegistrationController(
     public IActionResult Index()
     {
         ViewBag.StripePublishableKey = stripeOptions.Value.PublishableKey;
+        ViewBag.EnablePayments = stripeOptions.Value.EnablePayments;
         return View(new RegisterCompanyViewModel
         {
             Users = new List<RegisterUserInput> { new() }
@@ -35,11 +36,16 @@ public class RegistrationController(
     public async Task<IActionResult> Index(RegisterCompanyViewModel model)
     {
         ViewBag.StripePublishableKey = stripeOptions.Value.PublishableKey;
+        ViewBag.EnablePayments = stripeOptions.Value.EnablePayments;
 
         model.Users = model.Users.Where(x => !string.IsNullOrWhiteSpace(x.Email)).ToList();
         if (model.Users.Count + 1 > 5)
         {
             ModelState.AddModelError(string.Empty, "Free tier supports a maximum of five users including admin.");
+        }
+        if (stripeOptions.Value.EnablePayments && string.IsNullOrWhiteSpace(model.StripePaymentMethodId))
+        {
+            ModelState.AddModelError(string.Empty, "Payment method is required when payments are enabled.");
         }
 
         if (!ModelState.IsValid)
