@@ -1,0 +1,31 @@
+## .NET / ASP.NET Core
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+
+## EF Core / SQLite runtime files
+*.db
+*.db-shm
+*.db-wal
+
+## User secrets and local config overrides
+appsettings.*.local.json
+secrets.json
+
+## Build & publish
+publish/
+out/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## NuGet
+*.nupkg
+nuget.config.local
+
+## Rider / JetBrains
+.idea/
