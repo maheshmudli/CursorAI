@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="px-4 py-5 text-center">
+    <i class="bi bi-calendar3-week display-1 text-primary"></i>
+    <h1 class="display-5 fw-bold mt-3">ShiftManager</h1>
+    <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">
+            Multi-tenant shift management platform. Register your company today and start managing shifts with ease.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a asp-controller="Registration" asp-action="Index" class="btn btn-primary btn-lg px-4 gap-3">
+                <i class="bi bi-building-add"></i> Register Your Company
+            </a>
+            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg px-4">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 py-5">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-people display-4 text-primary"></i>
+                <h3 class="mt-3">Team Management</h3>
+                <p class="text-muted">Manage up to 5 users for free. Upgrade for more seats at just $5 AUD per additional user.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-calendar-check display-4 text-success"></i>
+                <h3 class="mt-3">Shift Scheduling</h3>
+                <p class="text-muted">Create, assign, and manage shifts with an intuitive interface. View upcoming shifts at a glance.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <i class="bi bi-arrow-left-right display-4 text-warning"></i>
+                <h3 class="mt-3">Swap Requests</h3>
+                <p class="text-muted">Employees can request shift swaps, with admin approval keeping everything organised.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light rounded-3 p-5 mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2>Pricing</h2>
+            <p class="text-muted">Simple, transparent pricing. No surprises.</p>
+        </div>
+    </div>
+    <div class="row g-4 mt-2">
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Base Plan</h4>
+                </div>
+                <div class="card-body">
+                    <p class="display-6 fw-bold">$1 <small class="fs-6 fw-normal text-muted">AUD one-time</small></p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Up to 5 users included</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Full shift management</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Swap request system</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Dashboard & reports</li>
+                    </ul>
+                    <a asp-controller="Registration" asp-action="Index" class="btn btn-primary w-100">Get Started</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning">
+                    <h4 class="mb-0">Pro Plan</h4>
+                </div>
+                <div class="card-body">
+                    <p class="display-6 fw-bold">$5 <small class="fs-6 fw-normal text-muted">AUD per extra seat</small></p>
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-check-circle text-success"></i> Everything in Base</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Unlimited additional users</li>
+                        <li><i class="bi bi-check-circle text-success"></i> $5 per extra seat (one-off)</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Priority support</li>
+                    </ul>
+                    <a asp-controller="Registration" asp-action="Index" class="btn btn-warning w-100">Start & Upgrade</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

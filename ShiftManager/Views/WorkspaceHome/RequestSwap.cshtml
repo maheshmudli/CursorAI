@@ -1,0 +1,114 @@
+@{
+    ViewData["Title"] = "Request Swap";
+    var slug = ViewBag.TenantSlug as string ?? "";
+    var preselectedAssignmentId = ViewBag.AssignmentId as int?;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title mb-4">
+                    <i class="bi bi-arrow-left-right text-primary"></i> Request Shift Swap
+                </h2>
+
+                <div id="swapError" class="alert alert-danger d-none"></div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">My Shift (to give away)</label>
+                    <select id="myAssignment" class="form-select">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Target Shift (to take)</label>
+                    <select id="targetAssignment" class="form-select">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" id="submitSwap" class="btn btn-primary">
+                        <i class="bi bi-send"></i> Submit Swap Request
+                    </button>
+                    <a href="/t/@slug" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const slug = '@slug';
+        const preselected = @(preselectedAssignmentId.HasValue ? preselectedAssignmentId.Value.ToString() : "null");
+
+        async function loadAssignments() {
+            const mySelect = document.getElementById('myAssignment');
+            const tgtSelect = document.getElementById('targetAssignment');
+
+            try {
+                const resp = await fetch(`/t/${slug}/api/shifts`);
+                if (!resp.ok) throw new Error('Failed to load shifts');
+                const shifts = await resp.json();
+
+                mySelect.innerHTML = '<option value="">Select your shift...</option>';
+                tgtSelect.innerHTML = '<option value="">Select target shift...</option>';
+
+                shifts.forEach(s => {
+                    if (!s.assignedUserId) return;
+                    const date = new Date(s.date).toLocaleDateString('en-AU');
+                    const label = `${date} - ${s.roleLabel} (${s.startTime}-${s.endTime})`;
+                    const myOpt = new Option(label, s.id);
+                    const tgtOpt = new Option(`${label} - ${s.assignedUserName || 'Unknown'}`, s.id);
+                    mySelect.appendChild(myOpt);
+                    tgtSelect.appendChild(tgtOpt);
+                });
+
+                if (preselected) {
+                    mySelect.value = preselected;
+                }
+            } catch (e) {
+                document.getElementById('swapError').textContent = 'Failed to load shifts: ' + e.message;
+                document.getElementById('swapError').classList.remove('d-none');
+            }
+        }
+
+        document.getElementById('submitSwap').addEventListener('click', async function() {
+            const myId = document.getElementById('myAssignment').value;
+            const tgtId = document.getElementById('targetAssignment').value;
+            const errDiv = document.getElementById('swapError');
+
+            if (!myId || !tgtId) {
+                errDiv.textContent = 'Please select both shifts.';
+                errDiv.classList.remove('d-none');
+                return;
+            }
+
+            if (myId === tgtId) {
+                errDiv.textContent = 'Cannot swap a shift with itself.';
+                errDiv.classList.remove('d-none');
+                return;
+            }
+
+            this.disabled = true;
+            const resp = await fetch(`/t/${slug}/api/swaps`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ myAssignmentId: parseInt(myId), targetAssignmentId: parseInt(tgtId) })
+            });
+
+            if (resp.ok) {
+                window.location.href = `/t/${slug}/WorkspaceHome/Swaps`;
+            } else {
+                const data = await resp.json().catch(() => ({}));
+                errDiv.textContent = data.error || 'Failed to submit swap request';
+                errDiv.classList.remove('d-none');
+                this.disabled = false;
+            }
+        });
+
+        loadAssignments();
+    </script>
+}

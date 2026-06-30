@@ -1,0 +1,300 @@
+@model ShiftManager.ViewModels.RegistrationViewModel
+@{
+    ViewData["Title"] = "Register Your Company";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title mb-1">
+                    <i class="bi bi-building-add text-primary"></i> Register Your Company
+                </h2>
+                <p class="text-muted mb-4">Create your company workspace. Includes 5 seats and a $1 AUD validation charge.</p>
+
+                <form id="registrationForm" method="post" asp-action="Complete">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="PaymentIntentId" id="paymentIntentId" />
+                    <input type="hidden" asp-for="PaymentMethodId" id="paymentMethodId" />
+
+                    @{
+                        var errors = ViewData.ModelState.Values.SelectMany(v => v.Errors).ToList();
+                        if (errors.Any())
+                        {
+                            <div class="alert alert-danger">
+                                @foreach (var error in errors)
+                                {
+                                    <div>@error.ErrorMessage</div>
+                                }
+                            </div>
+                        }
+                    }
+
+                    <!-- Company Info -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-building"></i> Company Information</h5>
+                            <div class="mb-3">
+                                <label asp-for="CompanyName" class="form-label fw-semibold"></label>
+                                <input asp-for="CompanyName" class="form-control" placeholder="Acme Corp" />
+                                <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Admin Info -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="bi bi-person-gear"></i> Administrator Account</h5>
+                            <div class="mb-3">
+                                <label asp-for="AdminFullName" class="form-label fw-semibold"></label>
+                                <input asp-for="AdminFullName" class="form-control" placeholder="Jane Smith" />
+                                <span asp-validation-for="AdminFullName" class="text-danger small"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="AdminEmail" class="form-label fw-semibold"></label>
+                                <input asp-for="AdminEmail" class="form-control" type="email" placeholder="jane@company.com" />
+                                <span asp-validation-for="AdminEmail" class="text-danger small"></span>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="AdminPassword" class="form-label fw-semibold"></label>
+                                    <input asp-for="AdminPassword" class="form-control" type="password" />
+                                    <span asp-validation-for="AdminPassword" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="AdminPasswordConfirm" class="form-label fw-semibold"></label>
+                                    <input asp-for="AdminPasswordConfirm" class="form-control" type="password" />
+                                    <span asp-validation-for="AdminPasswordConfirm" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Users -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-people"></i> Additional Users
+                                <small class="text-muted fw-normal">(optional, max 4)</small>
+                            </h5>
+                            <p class="text-muted small">The admin account counts as 1 of the 5 included seats. You can add up to 4 additional users now.</p>
+
+                            <div id="additionalUsers">
+                                @for (int i = 0; i < Model.AdditionalUsers.Count; i++)
+                                {
+                                    <div class="user-entry card mb-2">
+                                        <div class="card-body py-2">
+                                            <div class="row g-2 align-items-end">
+                                                <div class="col-md-5">
+                                                    <label class="form-label small">Full Name</label>
+                                                    <input name="AdditionalUsers[@i].FullName" class="form-control form-control-sm"
+                                                           value="@Model.AdditionalUsers[i].FullName" placeholder="Full Name" />
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <label class="form-label small">Email</label>
+                                                    <input name="AdditionalUsers[@i].Email" class="form-control form-control-sm"
+                                                           value="@Model.AdditionalUsers[i].Email" placeholder="user@company.com" type="email" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-user">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            <button type="button" id="addUserBtn" class="btn btn-outline-primary btn-sm mt-2">
+                                <i class="bi bi-person-plus"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payment -->
+                    <div class="card border-primary mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-credit-card"></i> Payment — $1.00 AUD Validation Charge</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">A $1.00 AUD charge validates your card. Your workspace is provisioned only after successful payment.</p>
+                            <div id="payment-element" class="mb-3"></div>
+                            <div id="payment-message" class="alert alert-danger d-none"></div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="button" id="submitBtn" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-circle"></i> Pay $1.00 AUD &amp; Register
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripeKey = '@ViewBag.StripePublishableKey';
+        const stripe = Stripe(stripeKey);
+        let elements;
+        let paymentElement;
+        let clientSecret = null;
+
+        const companyNameInput = document.getElementById('CompanyName');
+        const adminEmailInput = document.getElementById('AdminEmail');
+        const submitBtn = document.getElementById('submitBtn');
+        const paymentMessage = document.getElementById('payment-message');
+
+        // Add/remove user entries
+        let userCount = @Model.AdditionalUsers.Count;
+        const MAX_USERS = 4;
+
+        document.getElementById('addUserBtn').addEventListener('click', function () {
+            if (userCount >= MAX_USERS) {
+                alert('Maximum 4 additional users allowed on the free plan.');
+                return;
+            }
+            const container = document.getElementById('additionalUsers');
+            const div = document.createElement('div');
+            div.className = 'user-entry card mb-2';
+            div.innerHTML = `<div class="card-body py-2">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label small">Full Name</label>
+                        <input name="AdditionalUsers[${userCount}].FullName" class="form-control form-control-sm" placeholder="Full Name" />
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label small">Email</label>
+                        <input name="AdditionalUsers[${userCount}].Email" class="form-control form-control-sm" placeholder="user@company.com" type="email" />
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-user">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+            container.appendChild(div);
+            userCount++;
+        });
+
+        document.getElementById('additionalUsers').addEventListener('click', function (e) {
+            if (e.target.closest('.remove-user')) {
+                e.target.closest('.user-entry').remove();
+                // Reindex
+                document.querySelectorAll('.user-entry').forEach((entry, idx) => {
+                    entry.querySelectorAll('input').forEach(input => {
+                        const name = input.getAttribute('name');
+                        if (name) {
+                            input.setAttribute('name', name.replace(/\[\d+\]/, `[${idx}]`));
+                        }
+                    });
+                });
+                userCount = document.querySelectorAll('.user-entry').length;
+            }
+        });
+
+        // Initialize Stripe Elements when form has required fields
+        async function initStripe() {
+            const companyName = companyNameInput?.value?.trim();
+            const adminEmail = adminEmailInput?.value?.trim();
+
+            if (!companyName || !adminEmail) return;
+
+            if (clientSecret) return; // Already initialized
+
+            try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const response = await fetch('/Registration/CreatePaymentIntent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({ companyName, adminEmail })
+                });
+
+                if (!response.ok) throw new Error('Failed to create payment intent');
+                const data = await response.json();
+                clientSecret = data.clientSecret;
+                document.getElementById('paymentIntentId').value = data.paymentIntentId;
+
+                elements = stripe.elements({ clientSecret });
+                paymentElement = elements.create('payment');
+                paymentElement.mount('#payment-element');
+            } catch (err) {
+                showError('Failed to initialize payment: ' + err.message);
+            }
+        }
+
+        companyNameInput?.addEventListener('blur', initStripe);
+        adminEmailInput?.addEventListener('blur', initStripe);
+
+        submitBtn.addEventListener('click', async function (e) {
+            e.preventDefault();
+
+            // Basic validation
+            const companyName = companyNameInput?.value?.trim();
+            const adminEmail = adminEmailInput?.value?.trim();
+            if (!companyName || !adminEmail) {
+                showError('Please fill in company name and admin email first.');
+                return;
+            }
+
+            if (!clientSecret) {
+                await initStripe();
+                if (!clientSecret) {
+                    showError('Please wait for payment form to initialize.');
+                    return;
+                }
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            hideError();
+
+            try {
+                const { error, paymentIntent } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: window.location.origin + '/registration/complete-redirect',
+                    },
+                    redirect: 'if_required'
+                });
+
+                if (error) {
+                    showError(error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Pay $1.00 AUD & Register';
+                    return;
+                }
+
+                if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture')) {
+                    document.getElementById('paymentIntentId').value = paymentIntent.id;
+                    document.getElementById('registrationForm').submit();
+                } else {
+                    showError('Payment could not be confirmed. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Pay $1.00 AUD & Register';
+                }
+            } catch (err) {
+                showError('An error occurred: ' + err.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Pay $1.00 AUD & Register';
+            }
+        });
+
+        function showError(msg) {
+            paymentMessage.textContent = msg;
+            paymentMessage.classList.remove('d-none');
+        }
+        function hideError() {
+            paymentMessage.classList.add('d-none');
+        }
+    </script>
+}

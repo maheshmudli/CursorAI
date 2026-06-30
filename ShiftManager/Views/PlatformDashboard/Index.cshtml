@@ -1,0 +1,154 @@
+@model ShiftManager.ViewModels.PlatformDashboardViewModel
+@{
+    ViewData["Title"] = "Platform Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up text-primary"></i> Platform Owner Dashboard</h2>
+    <span class="badge bg-primary fs-6"><i class="bi bi-shield-check"></i> Platform Owner</span>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="mb-0">Total Registrations</h6>
+                        <h2 class="mb-0">@Model.TotalRegistrations</h2>
+                    </div>
+                    <i class="bi bi-clipboard-check display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="mb-0">Active Tenants</h6>
+                        <h2 class="mb-0">@Model.ActiveTenants</h2>
+                    </div>
+                    <i class="bi bi-buildings display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="mb-0">Total Users</h6>
+                        <h2 class="mb-0">@Model.TotalUsers</h2>
+                    </div>
+                    <i class="bi bi-people display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="mb-0">Total Revenue</h6>
+                        <h2 class="mb-0">$@Model.TotalRevenue.ToString("F2")</h2>
+                    </div>
+                    <i class="bi bi-cash-coin display-4 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a asp-controller="PlatformDashboard" asp-action="Tenants" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-buildings text-success display-4"></i>
+                <h6 class="mt-2">All Tenants</h6>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-controller="PlatformDashboard" asp-action="Registrations" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-clipboard-data text-primary display-4"></i>
+                <h6 class="mt-2">Registrations</h6>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-controller="PlatformDashboard" asp-action="AccessLogs" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-activity text-warning display-4"></i>
+                <h6 class="mt-2">Access Logs</h6>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-controller="Registration" asp-action="Index" class="card border-0 shadow-sm text-decoration-none text-dark h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-building-add text-info display-4"></i>
+                <h6 class="mt-2">New Registration</h6>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Registrations -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Registrations</h5>
+        <a asp-controller="PlatformDashboard" asp-action="Registrations" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Company</th>
+                    <th>Admin Email</th>
+                    <th>Status</th>
+                    <th>Payment Intent</th>
+                    <th>Submitted</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var reg in Model.RecentRegistrations)
+                {
+                    <tr>
+                        <td><strong>@reg.CompanyName</strong></td>
+                        <td>@reg.AdminEmail</td>
+                        <td>
+                            @{
+                                var badgeClass = reg.Status switch
+                                {
+                                    "Completed" => "success",
+                                    "PaymentFailed" => "danger",
+                                    "PaymentPending" => "warning text-dark",
+                                    _ => "secondary"
+                                };
+                            }
+                            <span class="badge bg-@badgeClass">@reg.Status</span>
+                        </td>
+                        <td><code class="small">@(reg.PaymentIntentId?.Length > 20 ? reg.PaymentIntentId[..20] + "..." : reg.PaymentIntentId ?? "—")</code></td>
+                        <td>@reg.CreatedAt.ToString("MMM d, yyyy HH:mm")</td>
+                        <td>
+                            @if (reg.TenantId.HasValue)
+                            {
+                                <a asp-controller="PlatformDashboard" asp-action="TenantDetail" asp-route-id="@reg.TenantId" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

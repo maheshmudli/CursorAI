@@ -1,0 +1,167 @@
+@model ShiftManager.ViewModels.SeatUpgradeViewModel
+@{
+    ViewData["Title"] = "Buy Additional Seats";
+    var slug = ViewBag.TenantSlug as string ?? "";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-warning">
+            <div class="card-header bg-warning">
+                <h4 class="mb-0"><i class="bi bi-unlock"></i> Upgrade — Buy Additional Seats</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    You are currently using <strong>@Model.CurrentUserCount</strong> of <strong>@Model.CurrentSeatAllowance</strong> seats.
+                    Each additional seat costs <strong>$5.00 AUD</strong> (one-time charge).
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.PendingUserEmail))
+                {
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-person-plus"></i>
+                        Pending user to add: <strong>@Model.PendingUserFullName</strong> (@Model.PendingUserEmail)
+                    </div>
+                }
+
+                <form id="upgradeForm" method="post" asp-action="CompleteUpgrade">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="PaymentIntentId" id="paymentIntentId" />
+                    <input type="hidden" asp-for="PendingUserFullName" />
+                    <input type="hidden" asp-for="PendingUserEmail" />
+
+                    @{
+                        var errors = ViewData.ModelState.Values.SelectMany(v => v.Errors).ToList();
+                        if (errors.Any())
+                        {
+                            <div class="alert alert-danger">
+                                @foreach (var error in errors)
+                                {
+                                    <div>@error.ErrorMessage</div>
+                                }
+                            </div>
+                        }
+                    }
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Number of Seats to Add</label>
+                        <div class="input-group" style="max-width: 200px;">
+                            <button type="button" class="btn btn-outline-secondary" id="decrementSeats">-</button>
+                            <input type="number" asp-for="SeatsToAdd" id="seatsCount" class="form-control text-center" min="1" max="20" value="1" />
+                            <button type="button" class="btn btn-outline-secondary" id="incrementSeats">+</button>
+                        </div>
+                        <div class="mt-2">
+                            Total: <strong id="totalCost">$5.00</strong> AUD
+                        </div>
+                    </div>
+
+                    <div class="card border-primary mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-credit-card"></i> Payment</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="payment-element"></div>
+                            <div id="payment-message" class="alert alert-danger d-none mt-2"></div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="payBtn" class="btn btn-warning btn-lg w-100">
+                        <i class="bi bi-check-circle"></i> Pay & Add Seats
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('@ViewBag.StripePublishableKey');
+        const slug = '@slug';
+        let elements, paymentElement, clientSecret;
+
+        function updateCost() {
+            const seats = parseInt(document.getElementById('seatsCount').value) || 1;
+            document.getElementById('totalCost').textContent = `$${(seats * 5).toFixed(2)}`;
+            clientSecret = null; // Reset when seats change
+        }
+
+        document.getElementById('decrementSeats').addEventListener('click', () => {
+            const input = document.getElementById('seatsCount');
+            if (parseInt(input.value) > 1) { input.value--; updateCost(); }
+        });
+        document.getElementById('incrementSeats').addEventListener('click', () => {
+            const input = document.getElementById('seatsCount');
+            input.value = parseInt(input.value) + 1; updateCost();
+        });
+        document.getElementById('seatsCount').addEventListener('change', updateCost);
+
+        async function initPayment() {
+            if (clientSecret) return;
+            const seats = parseInt(document.getElementById('seatsCount').value) || 1;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const resp = await fetch(`/t/${slug}/Seats/CreateSeatPaymentIntent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                body: JSON.stringify({ seatsToAdd: seats })
+            });
+            if (!resp.ok) { showError('Failed to initialize payment'); return; }
+            const data = await resp.json();
+            clientSecret = data.clientSecret;
+            document.getElementById('paymentIntentId').value = data.paymentIntentId;
+
+            elements = stripe.elements({ clientSecret });
+            paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+        }
+
+        document.getElementById('payBtn').addEventListener('click', async function() {
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+            hideError();
+
+            await initPayment();
+            if (!clientSecret) {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle"></i> Pay & Add Seats';
+                return;
+            }
+
+            const { error, paymentIntent } = await stripe.confirmPayment({
+                elements,
+                confirmParams: { return_url: window.location.href },
+                redirect: 'if_required'
+            });
+
+            if (error) {
+                showError(error.message);
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle"></i> Pay & Add Seats';
+                return;
+            }
+
+            if (paymentIntent && (paymentIntent.status === 'succeeded' || paymentIntent.status === 'requires_capture')) {
+                document.getElementById('paymentIntentId').value = paymentIntent.id;
+                document.getElementById('upgradeForm').submit();
+            } else {
+                showError('Payment not confirmed. Please try again.');
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle"></i> Pay & Add Seats';
+            }
+        });
+
+        function showError(msg) {
+            const el = document.getElementById('payment-message');
+            el.textContent = msg;
+            el.classList.remove('d-none');
+        }
+        function hideError() {
+            document.getElementById('payment-message').classList.add('d-none');
+        }
+
+        // Initialize payment on page load
+        initPayment();
+    </script>
+}

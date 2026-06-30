@@ -1,0 +1,53 @@
+@model ShiftManager.ViewModels.AddUserViewModel
+@{
+    ViewData["Title"] = "Add User";
+    var slug = ViewBag.TenantSlug as string ?? "";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title mb-4">
+                    <i class="bi bi-person-plus text-primary"></i> Add User
+                </h2>
+
+                <form asp-controller="Seats" asp-action="AddUser" method="post">
+                    @Html.AntiForgeryToken()
+
+                    @{
+                        var errors = ViewData.ModelState.Values.SelectMany(v => v.Errors).ToList();
+                        if (errors.Any())
+                        {
+                            <div class="alert alert-danger">
+                                @foreach (var error in errors)
+                                {
+                                    <div>@error.ErrorMessage</div>
+                                }
+                            </div>
+                        }
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label fw-semibold"></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Jane Smith" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-semibold"></label>
+                        <input asp-for="Email" class="form-control" type="email" placeholder="jane@company.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-check"></i> Add User
+                        </button>
+                        <a href="/t/@slug/WorkspaceHome/Users" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

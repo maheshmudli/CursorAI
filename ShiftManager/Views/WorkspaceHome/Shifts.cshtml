@@ -1,0 +1,282 @@
+@{
+    ViewData["Title"] = "Shifts";
+    var slug = ViewBag.TenantSlug as string ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-calendar-week text-primary"></i> Shifts</h2>
+    @if (User.IsInRole("CompanyAdmin"))
+    {
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createShiftModal">
+            <i class="bi bi-plus-circle"></i> New Shift
+        </button>
+    }
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">From Date</label>
+                <input type="date" id="filterFrom" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To Date</label>
+                <input type="date" id="filterTo" class="form-control" value="@DateTime.UtcNow.AddDays(28).ToString("yyyy-MM-dd")" />
+            </div>
+            @if (User.IsInRole("CompanyAdmin"))
+            {
+                <div class="col-md-3">
+                    <label class="form-label">User</label>
+                    <select id="filterUser" class="form-select">
+                        <option value="">All Users</option>
+                    </select>
+                </div>
+            }
+            <div class="col-md-3 d-flex align-items-end">
+                <button id="filterBtn" class="btn btn-secondary w-100">
+                    <i class="bi bi-filter"></i> Apply Filter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="shiftsContainer">
+    <div class="text-center p-4">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2 text-muted">Loading shifts...</p>
+    </div>
+</div>
+
+@if (User.IsInRole("CompanyAdmin"))
+{
+    <!-- Create Shift Modal -->
+    <div class="modal fade" id="createShiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Create Shift</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="createShiftError" class="alert alert-danger d-none"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" id="newDate" class="form-control" value="@DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" id="newStart" class="form-control" value="09:00" required />
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">End Time</label>
+                            <input type="time" id="newEnd" class="form-control" value="17:00" required />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role / Label</label>
+                        <input type="text" id="newRole" class="form-control" placeholder="Morning Shift" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes (optional)</label>
+                        <textarea id="newNotes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="saveShiftBtn" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Create Shift
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Shift Modal -->
+    <div class="modal fade" id="assignShiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-person-check"></i> Assign Shift</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="assignError" class="alert alert-danger d-none"></div>
+                    <input type="hidden" id="assignShiftId" />
+                    <div class="mb-3">
+                        <label class="form-label">Assign to User</label>
+                        <select id="assignUserId" class="form-select">
+                            <option value="">Loading users...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="saveAssignBtn" class="btn btn-primary">Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const slug = '@slug';
+        let allUsers = [];
+
+        async function loadUsers() {
+            try {
+                const resp = await fetch(`/t/${slug}/api/users`);
+                if (resp.ok) {
+                    allUsers = await resp.json();
+                    const filterUser = document.getElementById('filterUser');
+                    const assignUserId = document.getElementById('assignUserId');
+                    allUsers.forEach(u => {
+                        if (filterUser) {
+                            filterUser.innerHTML += `<option value="${u.id}">${u.fullName}</option>`;
+                        }
+                        if (assignUserId) {
+                            assignUserId.innerHTML += `<option value="${u.id}">${u.fullName} (${u.role})</option>`;
+                        }
+                    });
+                    if (assignUserId && allUsers.length > 0) {
+                        assignUserId.innerHTML = '<option value="">Select user...</option>' + assignUserId.innerHTML;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function loadShifts() {
+            const from = document.getElementById('filterFrom')?.value || '';
+            const to = document.getElementById('filterTo')?.value || '';
+            const userId = document.getElementById('filterUser')?.value || '';
+
+            let url = `/t/${slug}/api/shifts?`;
+            if (from) url += `from=${from}&`;
+            if (to) url += `to=${to}&`;
+            if (userId) url += `userId=${userId}&`;
+
+            const container = document.getElementById('shiftsContainer');
+            container.innerHTML = '<div class="text-center p-4"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error('Failed to load');
+                const shifts = await resp.json();
+
+                if (!shifts.length) {
+                    container.innerHTML = '<div class="text-center text-muted p-4"><i class="bi bi-calendar-x display-4"></i><p class="mt-2">No shifts found.</p></div>';
+                    return;
+                }
+
+                const isAdmin = @(User.IsInRole("CompanyAdmin") ? "true" : "false");
+
+                let html = '<div class="table-responsive"><table class="table table-hover"><thead class="table-dark"><tr><th>Date</th><th>Time</th><th>Role</th><th>Notes</th><th>Assigned To</th>';
+                if (isAdmin) html += '<th>Actions</th>';
+                html += '</tr></thead><tbody>';
+
+                shifts.forEach(s => {
+                    const dateStr = new Date(s.date).toLocaleDateString('en-AU', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+                    html += `<tr>
+                        <td>${dateStr}</td>
+                        <td>${s.startTime} – ${s.endTime}</td>
+                        <td><strong>${s.roleLabel}</strong></td>
+                        <td class="text-muted">${s.notes || ''}</td>
+                        <td>${s.assignedUserName ? `<span class="badge bg-info text-dark">${s.assignedUserName}</span>` : '<span class="badge bg-warning text-dark">Unassigned</span>'}</td>`;
+                    if (isAdmin) {
+                        html += `<td>
+                            <button class="btn btn-sm btn-outline-primary assign-btn" data-id="${s.id}"><i class="bi bi-person-check"></i> Assign</button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${s.id}"><i class="bi bi-trash"></i></button>
+                        </td>`;
+                    }
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+
+                // Attach event listeners
+                document.querySelectorAll('.assign-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.getElementById('assignShiftId').value = this.dataset.id;
+                        new bootstrap.Modal(document.getElementById('assignShiftModal')).show();
+                    });
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        if (!confirm('Delete this shift?')) return;
+                        const resp = await fetch(`/t/${slug}/api/shifts/${this.dataset.id}`, { method: 'DELETE' });
+                        if (resp.ok) loadShifts();
+                        else alert('Failed to delete shift');
+                    });
+                });
+            } catch (e) {
+                container.innerHTML = `<div class="alert alert-danger">Error loading shifts: ${e.message}</div>`;
+            }
+        }
+
+        document.getElementById('filterBtn')?.addEventListener('click', loadShifts);
+
+        document.getElementById('saveShiftBtn')?.addEventListener('click', async function() {
+            const date = document.getElementById('newDate').value;
+            const start = document.getElementById('newStart').value;
+            const end = document.getElementById('newEnd').value;
+            const role = document.getElementById('newRole').value;
+            const notes = document.getElementById('newNotes').value;
+            const errDiv = document.getElementById('createShiftError');
+
+            if (!date || !start || !end || !role) {
+                errDiv.textContent = 'Please fill in all required fields.';
+                errDiv.classList.remove('d-none');
+                return;
+            }
+
+            const resp = await fetch(`/t/${slug}/api/shifts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, startTime: start, endTime: end, roleLabel: role, notes })
+            });
+
+            if (resp.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('createShiftModal')).hide();
+                loadShifts();
+            } else {
+                const data = await resp.json();
+                errDiv.textContent = data.error || data.title || 'Failed to create shift';
+                errDiv.classList.remove('d-none');
+            }
+        });
+
+        document.getElementById('saveAssignBtn')?.addEventListener('click', async function() {
+            const shiftId = document.getElementById('assignShiftId').value;
+            const userId = document.getElementById('assignUserId').value;
+            const errDiv = document.getElementById('assignError');
+
+            if (!userId) {
+                errDiv.textContent = 'Please select a user.';
+                errDiv.classList.remove('d-none');
+                return;
+            }
+
+            const resp = await fetch(`/t/${slug}/api/shifts/${shiftId}/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+
+            if (resp.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('assignShiftModal')).hide();
+                loadShifts();
+            } else {
+                const data = await resp.json();
+                errDiv.textContent = data.error || 'Failed to assign shift';
+                errDiv.classList.remove('d-none');
+            }
+        });
+
+        loadUsers();
+        loadShifts();
+    </script>
+}

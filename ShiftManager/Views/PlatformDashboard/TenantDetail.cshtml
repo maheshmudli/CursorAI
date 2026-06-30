@@ -1,0 +1,150 @@
+@model ShiftManager.ViewModels.TenantDetailViewModel
+@{
+    ViewData["Title"] = "Tenant: " + Model.CompanyName;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-building text-primary"></i> @Model.CompanyName</h2>
+        <code>/t/@Model.Slug</code>
+        <span class="badge bg-@(Model.Status == "Active" ? "success" : "secondary") ms-2">@Model.Status</span>
+        <span class="badge bg-@(Model.Tier == "Pro" ? "warning text-dark" : "secondary") ms-1">@Model.Tier</span>
+    </div>
+    <div>
+        <a href="/t/@Model.Slug" class="btn btn-outline-primary" target="_blank">
+            <i class="bi bi-box-arrow-up-right"></i> Open Workspace
+        </a>
+        <a asp-controller="PlatformDashboard" asp-action="Tenants" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Tenant Info -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-info-circle"></i> Tenant Info</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5">ID</dt><dd class="col-7">@Model.Id</dd>
+                    <dt class="col-5">Slug</dt><dd class="col-7"><code>@Model.Slug</code></dd>
+                    <dt class="col-5">Route</dt><dd class="col-7"><code>@Model.Route</code></dd>
+                    <dt class="col-5">Created</dt><dd class="col-7">@Model.CreatedAt.ToString("MMM d, yyyy")</dd>
+                    <dt class="col-5">Tier</dt><dd class="col-7">@Model.Tier</dd>
+                    <dt class="col-5">Seats</dt><dd class="col-7">@Model.UserCount / @Model.SeatAllowance</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provisioning -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-cloud-check"></i> Provisioning</h6></div>
+            <div class="card-body">
+                @if (Model.Provisioning != null)
+                {
+                    <dl class="row mb-0">
+                        <dt class="col-5">Status</dt>
+                        <dd class="col-7"><span class="badge bg-@(Model.Provisioning.Status == "Completed" ? "success" : "warning text-dark")">@Model.Provisioning.Status</span></dd>
+                        <dt class="col-5">Route</dt><dd class="col-7"><code>@Model.Provisioning.Route</code></dd>
+                        <dt class="col-5">Provisioned</dt><dd class="col-7">@Model.Provisioning.ProvisionedAt.ToString("MMM d, yyyy")</dd>
+                    </dl>
+                }
+                else
+                {
+                    <p class="text-muted">No provisioning record</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Summary -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="bi bi-credit-card"></i> Payments</h6></div>
+            <div class="card-body p-0">
+                @if (Model.Payments.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var p in Model.Payments)
+                        {
+                            <div class="list-group-item py-2">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="badge bg-info text-dark">@p.Purpose</span>
+                                        <small class="text-muted d-block">@p.CreatedAt.ToString("MMM d")</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong>$@((p.Amount / 100.0).ToString("F2"))</strong>
+                                        <span class="badge bg-@(p.Status == "Succeeded" ? "success" : "danger") d-block">@p.Status</span>
+                                    </div>
+                                </div>
+                                <small class="text-muted"><code>@(p.StripePaymentIntentId.Length > 25 ? p.StripePaymentIntentId[..25] + "..." : p.StripePaymentIntentId)</code></small>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted p-3">No payments</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users -->
+<div class="card mt-4">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-people"></i> Users (@Model.UserCount / @Model.SeatAllowance seats)</h5></div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th><th>Email</th><th>Role</th><th>Last Login</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    <tr>
+                        <td>@u.FullName</td>
+                        <td>@u.Email</td>
+                        <td><span class="badge bg-@(u.Role == "CompanyAdmin" ? "primary" : "secondary")">@u.Role</span></td>
+                        <td>@(u.LastLogin?.ToString("MMM d, yyyy HH:mm") ?? "Never")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Seat Purchases -->
+@if (Model.SeatPurchases.Any())
+{
+    <div class="card mt-4">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-cart-check"></i> Seat Purchases</h5></div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th><th>Seats Added</th><th>Amount</th><th>Status</th><th>Stripe Intent</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sp in Model.SeatPurchases)
+                    {
+                        <tr>
+                            <td>@sp.CreatedAt.ToString("MMM d, yyyy")</td>
+                            <td>@sp.SeatsAdded</td>
+                            <td>$@((sp.Amount / 100.0).ToString("F2")) @sp.Currency.ToUpper()</td>
+                            <td><span class="badge bg-@(sp.Status == "Succeeded" ? "success" : "danger")">@sp.Status</span></td>
+                            <td><code class="small">@sp.StripePaymentIntentId</code></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
