@@ -1,0 +1,30 @@
+@model PagedResult<AccessRecordRow>
+@{
+    ViewData["Title"] = "Access records";
+    ViewData["PagerAction"] = "AccessRecords";
+    ViewData["PagerPage"] = Model.Page;
+    ViewData["PagerTotalPages"] = Model.TotalPages;
+}
+<h1 class="h3 mb-3">Access records</h1>
+<p class="text-muted">Which users belong to which tenant, and when they last signed in.</p>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Roles</th><th>Last login</th></tr></thead>
+            <tbody>
+            @foreach (var a in Model.Items)
+            {
+                <tr>
+                    <td>@a.FullName</td>
+                    <td>@a.Email</td>
+                    <td>@a.CompanyName <code class="small">/t/@a.Slug</code></td>
+                    <td>@string.Join(", ", a.Roles)</td>
+                    <td>@(a.LastLoginAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+                </tr>
+            }
+            @if (!Model.Items.Any()) { <tr><td colspan="5" class="text-muted p-3">No access records yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer"><partial name="_Pager" /></div>
+</div>

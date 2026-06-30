@@ -1,0 +1,21 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+<div class="px-4 py-5 my-3 text-center">
+    <h1 class="display-5 fw-bold">Shift management for every company</h1>
+    <div class="col-lg-7 mx-auto">
+        <p class="lead mb-4">
+            Register your company, validate your card, and get an isolated shift-management
+            workspace provisioned in one flow. Five users are included free.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a asp-controller="Register" asp-action="Index" class="btn btn-primary btn-lg px-4 gap-3">Register your company</a>
+            <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg px-4">Sign in</a>
+        </div>
+    </div>
+</div>
+<div class="row g-4 py-3">
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5 class="card-title">Isolated workspaces</h5><p class="card-text">Each company's data is scoped by tenant and enforced with a global query filter.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5 class="card-title">Card validation</h5><p class="card-text">A 1.00 AUD Stripe charge confirms the card before anything is provisioned.</p></div></div></div>
+    <div class="col-md-4"><div class="card h-100"><div class="card-body"><h5 class="card-title">Grow with Pro</h5><p class="card-text">Need more than five users? Buy seats at 5.00 AUD each under a Pro license.</p></div></div></div>
+</div>

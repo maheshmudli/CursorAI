@@ -1,0 +1,39 @@
+@model PagedResult<TenantOverviewRow>
+@{
+    ViewData["Title"] = "Platform overview";
+    ViewData["PagerAction"] = "Index";
+    ViewData["PagerPage"] = Model.Page;
+    ViewData["PagerTotalPages"] = Model.TotalPages;
+}
+<h1 class="h3 mb-3">Platform overview</h1>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><div class="display-6">@ViewBag.TotalTenants</div><div class="text-muted">Tenants</div></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><div class="display-6">@ViewBag.TotalProvisioned</div><div class="text-muted">Workspaces provisioned</div></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><div class="display-6">@ViewBag.TotalUsers</div><div class="text-muted">Tenant users</div></div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header">Companies &amp; seats</div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>Company</th><th>Route</th><th>Tier</th><th>Status</th><th>Seats</th><th>Users</th><th>Seat purchases</th><th>Created</th></tr></thead>
+            <tbody>
+            @foreach (var t in Model.Items)
+            {
+                <tr>
+                    <td>@t.CompanyName</td>
+                    <td><code>@t.Route</code></td>
+                    <td><span class="badge bg-@(t.Tier == TenantTier.Pro ? "success" : "secondary")">@t.Tier</span></td>
+                    <td>@t.Status</td>
+                    <td>@t.SeatAllowance</td>
+                    <td>@t.UserCount</td>
+                    <td>@t.SeatPurchaseCount</td>
+                    <td>@t.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+            @if (!Model.Items.Any()) { <tr><td colspan="8" class="text-muted p-3">No tenants yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer"><partial name="_Pager" /></div>
+</div>

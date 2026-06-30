@@ -1,0 +1,28 @@
+@model PagedResult<ProvisioningRecordRow>
+@{
+    ViewData["Title"] = "Workspaces";
+    ViewData["PagerAction"] = "Workspaces";
+    ViewData["PagerPage"] = Model.Page;
+    ViewData["PagerTotalPages"] = Model.TotalPages;
+}
+<h1 class="h3 mb-3">Provisioned workspaces</h1>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>Company</th><th>Route</th><th>Status</th><th>Provisioned</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr>
+                    <td>@r.CompanyName</td>
+                    <td><code>@r.Route</code></td>
+                    <td>@r.Status</td>
+                    <td>@r.ProvisionedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+            @if (!Model.Items.Any()) { <tr><td colspan="4" class="text-muted p-3">No workspaces provisioned yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer"><partial name="_Pager" /></div>
+</div>

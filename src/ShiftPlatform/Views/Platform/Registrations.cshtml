@@ -1,0 +1,30 @@
+@model PagedResult<RegistrationRow>
+@{
+    ViewData["Title"] = "Registrations";
+    ViewData["PagerAction"] = "Registrations";
+    ViewData["PagerPage"] = Model.Page;
+    ViewData["PagerTotalPages"] = Model.TotalPages;
+}
+<h1 class="h3 mb-3">Registration form submissions</h1>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>Company</th><th>Slug</th><th>Status</th><th>Validation amount</th><th>Payment Intent</th><th>Submitted</th></tr></thead>
+            <tbody>
+            @foreach (var r in Model.Items)
+            {
+                <tr>
+                    <td>@r.CompanyName</td>
+                    <td><code>@r.Slug</code></td>
+                    <td><span class="badge bg-@(r.Status == "Provisioned" ? "success" : r.Status == "Failed" ? "danger" : "secondary")">@r.Status</span></td>
+                    <td>@r.AmountDisplay</td>
+                    <td><code class="small">@r.StripePaymentIntentId</code></td>
+                    <td>@r.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                </tr>
+            }
+            @if (!Model.Items.Any()) { <tr><td colspan="6" class="text-muted p-3">No registrations yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer"><partial name="_Pager" /></div>
+</div>

@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Shifts";
+    var slug = (string)ViewBag.Slug;
+}
+<h1 class="h3 mb-3">Shifts</h1>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Create shift</div>
+            <div class="card-body">
+                <div id="createMsg" class="alert d-none"></div>
+                <div class="mb-2"><label class="form-label">Date</label><input type="date" id="date" class="form-control" /></div>
+                <div class="row g-2">
+                    <div class="col"><label class="form-label">Start</label><input type="time" id="start" class="form-control" value="09:00" /></div>
+                    <div class="col"><label class="form-label">End</label><input type="time" id="end" class="form-control" value="17:00" /></div>
+                </div>
+                <div class="mb-2"><label class="form-label">Role / label</label><input id="role" class="form-control" placeholder="e.g. Front of House" /></div>
+                <div class="mb-2"><label class="form-label">Notes</label><textarea id="notes" class="form-control" rows="2"></textarea></div>
+                <button id="createBtn" class="btn btn-primary w-100">Create shift</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">All shifts</div>
+            <div class="card-body p-0">
+                <table class="table mb-0 align-middle">
+                    <thead><tr><th>Date</th><th>Time</th><th>Role</th><th>Assigned to</th><th></th></tr></thead>
+                    <tbody id="shiftRows"><tr><td colspan="5" class="p-3 text-muted">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const apiBase = '/t/@slug/api';
+    let users = [];
+    function fmtTime(t){ return t ? t.substring(0,5) : ''; }
+    function msg(el, type, text){ el.className = `alert alert-${type}`; el.textContent = text; }
+
+    async function loadUsers(){ users = await (await fetch(`${apiBase}/users`)).json(); }
+
+    function userOptions(selectedId){
+        return ['<option value="">— Unassigned —</option>'].concat(
+            users.map(u => `<option value="${u.id}" ${u.id===selectedId?'selected':''}>${u.fullName}</option>`)).join('');
+    }
+
+    async function loadShifts(){
+        const shifts = await (await fetch(`${apiBase}/shifts`)).json();
+        const tbody = document.getElementById('shiftRows');
+        tbody.innerHTML = shifts.length ? shifts.map(s => `
+            <tr>
+                <td>${s.date}</td>
+                <td>${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</td>
+                <td>${s.roleLabel}</td>
+                <td><select class="form-select form-select-sm assign" data-id="${s.id}">${userOptions(s.assignedUserId)}</select></td>
+                <td><button class="btn btn-sm btn-outline-danger del" data-id="${s.id}">Delete</button></td>
+            </tr>`).join('') : '<tr><td colspan="5" class="p-3 text-muted">No shifts yet.</td></tr>';
+
+        tbody.querySelectorAll('.assign').forEach(sel => sel.addEventListener('change', async (e) => {
+            const id = e.target.dataset.id;
+            const userId = e.target.value;
+            if (!userId) return;
+            await fetch(`${apiBase}/shifts/${id}/assign`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId }) });
+            loadShifts();
+        }));
+        tbody.querySelectorAll('.del').forEach(btn => btn.addEventListener('click', async (e) => {
+            if (!confirm('Delete this shift?')) return;
+            await fetch(`${apiBase}/shifts/${e.target.dataset.id}`, { method:'DELETE' });
+            loadShifts();
+        }));
+    }
+
+    document.getElementById('createBtn').addEventListener('click', async () => {
+        const cm = document.getElementById('createMsg');
+        const payload = {
+            date: document.getElementById('date').value,
+            startTime: document.getElementById('start').value,
+            endTime: document.getElementById('end').value,
+            roleLabel: document.getElementById('role').value,
+            notes: document.getElementById('notes').value
+        };
+        const res = await fetch(`${apiBase}/shifts`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        if (res.ok){ msg(cm,'success','Shift created.'); document.getElementById('role').value=''; document.getElementById('notes').value=''; loadShifts(); }
+        else { const e = await res.json().catch(()=>({error:'Failed'})); msg(cm,'danger', e.error || 'Failed to create shift.'); }
+    });
+
+    (async () => { await loadUsers(); await loadShifts(); })();
+</script>
+}

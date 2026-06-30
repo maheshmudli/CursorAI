@@ -1,0 +1,81 @@
+@{
+    ViewData["Title"] = "Users";
+    var slug = (string)ViewBag.Slug;
+}
+<h1 class="h3 mb-3">Users &amp; seats</h1>
+
+@if (TempData["SeatSuccess"] != null) { <div class="alert alert-success">@TempData["SeatSuccess"]</div> }
+@if (TempData["SeatError"] != null) { <div class="alert alert-danger">@TempData["SeatError"]</div> }
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between">
+                <span>Team</span>
+                <span class="text-muted small"><span id="count">@ViewBag.UserCount</span> / @ViewBag.SeatAllowance seats used</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0"><thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead><tbody id="userRows"><tr><td colspan="3" class="p-3 text-muted">Loading…</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-header">Add a user</div>
+            <div class="card-body">
+                <div id="addMsg" class="alert d-none"></div>
+                <div class="mb-2"><label class="form-label">Full name</label><input id="fullName" class="form-control" /></div>
+                <div class="mb-2"><label class="form-label">Email</label><input id="email" class="form-control" /></div>
+                <button id="addBtn" class="btn btn-primary w-100">Add user</button>
+            </div>
+        </div>
+        <div class="card border-warning" id="seatCard" style="display:none">
+            <div class="card-header bg-warning-subtle">Need more seats?</div>
+            <div class="card-body">
+                <p class="small mb-2" id="seatMsg"></p>
+                <form asp-action="BuySeats" asp-route-slug="@slug" method="post" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <input type="number" name="seats" min="1" value="1" class="form-control" style="max-width:90px" />
+                    <button type="submit" class="btn btn-warning flex-grow-1">Buy seats (5.00 AUD each)</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const apiBase = '/t/@slug/api';
+    function msg(el, type, text){ el.className = `alert alert-${type}`; el.textContent = text; }
+
+    async function loadUsers(){
+        const users = await (await fetch(`${apiBase}/users`)).json();
+        document.getElementById('userRows').innerHTML = users.map(u =>
+            `<tr><td>${u.fullName}</td><td>${u.email}</td><td><span class="badge bg-secondary">${u.role}</span></td></tr>`).join('');
+        document.getElementById('count').textContent = users.length;
+    }
+
+    document.getElementById('addBtn').addEventListener('click', async () => {
+        const am = document.getElementById('addMsg');
+        const payload = { fullName: document.getElementById('fullName').value, email: document.getElementById('email').value };
+        const res = await fetch(`${apiBase}/users`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        if (res.ok){
+            const data = await res.json();
+            msg(am,'success', `Added ${data.user.fullName}. Temporary password: ${data.tempPassword}`);
+            document.getElementById('fullName').value=''; document.getElementById('email').value='';
+            document.getElementById('seatCard').style.display='none';
+            loadUsers();
+        } else if (res.status === 409){
+            const e = await res.json();
+            msg(am,'warning', e.error);
+            document.getElementById('seatMsg').textContent = e.error;
+            document.getElementById('seatCard').style.display='block';
+        } else {
+            const e = await res.json().catch(()=>({error:'Failed'}));
+            msg(am,'danger', e.error || 'Failed to add user.');
+        }
+    });
+
+    loadUsers();
+</script>
+}

@@ -1,0 +1,111 @@
+@model RegistrationInput
+@{
+    ViewData["Title"] = "Register company";
+    var maxAdditional = PlatformConstants.IncludedSeats - 1;
+}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h1 class="h3 mb-3">Register your company</h1>
+        @if (TempData["RegistrationError"] != null)
+        {
+            <div class="alert alert-danger">@TempData["RegistrationError"]</div>
+        }
+        <div class="alert alert-info small">
+            Registration includes <strong>@PlatformConstants.IncludedSeats users</strong>. You (the admin) count as one,
+            so you may add up to <strong>@maxAdditional</strong> members now. A <strong>1.00 AUD</strong> card-validation
+            charge is taken before your workspace is created.
+        </div>
+
+        <form asp-action="Index" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="card mb-3">
+                <div class="card-header">Company</div>
+                <div class="card-body">
+                    <label class="form-label" asp-for="CompanyName"></label>
+                    <input class="form-control" asp-for="CompanyName" />
+                    <span asp-validation-for="CompanyName" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">Administrator (you)</div>
+                <div class="card-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" asp-for="AdminFullName"></label>
+                        <input class="form-control" asp-for="AdminFullName" />
+                        <span asp-validation-for="AdminFullName" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" asp-for="AdminEmail"></label>
+                        <input class="form-control" asp-for="AdminEmail" />
+                        <span asp-validation-for="AdminEmail" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" asp-for="AdminPassword"></label>
+                        <input class="form-control" asp-for="AdminPassword" />
+                        <span asp-validation-for="AdminPassword" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" asp-for="ConfirmPassword"></label>
+                        <input class="form-control" asp-for="ConfirmPassword" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Members (optional, up to @maxAdditional)</span>
+                    <button type="button" id="addMember" class="btn btn-sm btn-outline-primary">+ Add member</button>
+                </div>
+                <div class="card-body" id="memberRows">
+                    @for (var i = 0; i < Model.Members.Count; i++)
+                    {
+                        <div class="row g-2 mb-2 member-row">
+                            <div class="col-md-6"><input class="form-control" placeholder="Full name" name="Members[@i].FullName" value="@Model.Members[i].FullName" /></div>
+                            <div class="col-md-5"><input class="form-control" placeholder="Email" name="Members[@i].Email" value="@Model.Members[i].Email" /></div>
+                            <div class="col-md-1"><button type="button" class="btn btn-outline-danger remove-member">&times;</button></div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg">Continue to payment</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const maxAdditional = @maxAdditional;
+    const rows = document.getElementById('memberRows');
+    function reindex() {
+        [...rows.querySelectorAll('.member-row')].forEach((row, i) => {
+            row.querySelectorAll('input').forEach(inp => {
+                const isEmail = inp.placeholder === 'Email';
+                inp.name = `Members[${i}].${isEmail ? 'Email' : 'FullName'}`;
+            });
+        });
+    }
+    document.getElementById('addMember').addEventListener('click', () => {
+        if (rows.querySelectorAll('.member-row').length >= maxAdditional) {
+            alert('You can add at most ' + maxAdditional + ' members at registration. Buy seats from your workspace to add more later.');
+            return;
+        }
+        const div = document.createElement('div');
+        div.className = 'row g-2 mb-2 member-row';
+        div.innerHTML = `<div class="col-md-6"><input class="form-control" placeholder="Full name" /></div>
+            <div class="col-md-5"><input class="form-control" placeholder="Email" /></div>
+            <div class="col-md-1"><button type="button" class="btn btn-outline-danger remove-member">&times;</button></div>`;
+        rows.appendChild(div);
+        reindex();
+    });
+    rows.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-member')) {
+            e.target.closest('.member-row').remove();
+            reindex();
+        }
+    });
+</script>
+}

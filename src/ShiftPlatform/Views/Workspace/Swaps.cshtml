@@ -1,0 +1,85 @@
+@{
+    ViewData["Title"] = "Swaps";
+    var slug = (string)ViewBag.Slug;
+    var userId = (string)ViewBag.UserId;
+}
+<h1 class="h3 mb-3">Shift swaps</h1>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">Request a swap</div>
+            <div class="card-body">
+                <div id="reqMsg" class="alert d-none"></div>
+                <div class="mb-2"><label class="form-label">Your shift</label><select id="mine" class="form-select"></select></div>
+                <div class="mb-2"><label class="form-label">Swap with</label><select id="theirs" class="form-select"></select></div>
+                <button id="reqBtn" class="btn btn-primary w-100">Request swap</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">Swap requests</div>
+            <div class="card-body p-0">
+                <table class="table mb-0 align-middle"><thead><tr><th>Requester</th><th>Their shift</th><th>Wants</th><th>Status</th><th></th></tr></thead><tbody id="swapRows"><tr><td colspan="5" class="p-3 text-muted">Loading…</td></tr></tbody></table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const apiBase = '/t/@slug/api';
+    const myUserId = '@userId';
+    function fmtTime(t){ return t ? t.substring(0,5) : ''; }
+    function shiftLabel(s){ return `${s.date} ${fmtTime(s.startTime)}–${fmtTime(s.endTime)} ${s.roleLabel}`; }
+    function msg(el, type, text){ el.className = `alert alert-${type}`; el.textContent = text; }
+
+    async function loadAssignments(){
+        const shifts = await (await fetch(`${apiBase}/shifts`)).json();
+        const assigned = shifts.filter(s => s.assignmentId);
+        const mine = assigned.filter(s => s.assignedUserId === myUserId);
+        const theirs = assigned.filter(s => s.assignedUserId !== myUserId);
+        document.getElementById('mine').innerHTML = mine.length
+            ? mine.map(s => `<option value="${s.assignmentId}">${shiftLabel(s)}</option>`).join('')
+            : '<option value="">(you have no assigned shifts)</option>';
+        document.getElementById('theirs').innerHTML = theirs.length
+            ? theirs.map(s => `<option value="${s.assignmentId}">${shiftLabel(s)} — ${s.assignedUserName}</option>`).join('')
+            : '<option value="">(no other shifts)</option>';
+    }
+
+    async function loadSwaps(){
+        const swaps = await (await fetch(`${apiBase}/swaps`)).json();
+        const tbody = document.getElementById('swapRows');
+        tbody.innerHTML = swaps.length ? swaps.map(s => `
+            <tr>
+                <td>${s.requestingUserName}</td>
+                <td>${s.requestingShift ? shiftLabel(s.requestingShift) : ''}</td>
+                <td>${s.targetUserName}: ${s.targetShift ? shiftLabel(s.targetShift) : ''}</td>
+                <td><span class="badge bg-${s.status==='Approved'?'success':s.status==='Rejected'?'danger':'warning'}">${s.status}</span></td>
+                <td>${s.canApprove ? `<button class="btn btn-sm btn-success appr" data-id="${s.id}">Approve</button> <button class="btn btn-sm btn-outline-danger rej" data-id="${s.id}">Reject</button>` : ''}</td>
+            </tr>`).join('') : '<tr><td colspan="5" class="p-3 text-muted">No swap requests.</td></tr>';
+
+        tbody.querySelectorAll('.appr').forEach(b => b.addEventListener('click', async e => {
+            await fetch(`${apiBase}/swaps/${e.target.dataset.id}/approve`, { method:'POST' });
+            await loadSwaps(); await loadAssignments();
+        }));
+        tbody.querySelectorAll('.rej').forEach(b => b.addEventListener('click', async e => {
+            await fetch(`${apiBase}/swaps/${e.target.dataset.id}/reject`, { method:'POST' });
+            await loadSwaps();
+        }));
+    }
+
+    document.getElementById('reqBtn').addEventListener('click', async () => {
+        const rm = document.getElementById('reqMsg');
+        const requestingAssignmentId = parseInt(document.getElementById('mine').value);
+        const targetAssignmentId = parseInt(document.getElementById('theirs').value);
+        if (!requestingAssignmentId || !targetAssignmentId){ msg(rm,'warning','Pick both shifts.'); return; }
+        const res = await fetch(`${apiBase}/swaps`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ requestingAssignmentId, targetAssignmentId }) });
+        if (res.ok){ msg(rm,'success','Swap requested.'); loadSwaps(); }
+        else { const e = await res.json().catch(()=>({error:'Failed'})); msg(rm,'danger', e.error || 'Failed.'); }
+    });
+
+    (async () => { await loadAssignments(); await loadSwaps(); })();
+</script>
+}

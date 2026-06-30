@@ -1,0 +1,21 @@
+@{
+    var pagerAction = (string)ViewData["PagerAction"]!;
+    var pagerPage = (int)ViewData["PagerPage"]!;
+    var pagerTotal = (int)ViewData["PagerTotalPages"]!;
+    var prev = pagerPage - 1;
+    var next = pagerPage + 1;
+}
+@if (pagerTotal > 1)
+{
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(pagerPage <= 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action(pagerAction, new { page = prev })">Previous</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link">Page @pagerPage of @pagerTotal</span></li>
+            <li class="page-item @(pagerPage >= pagerTotal ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action(pagerAction, new { page = next })">Next</a>
+            </li>
+        </ul>
+    </nav>
+}

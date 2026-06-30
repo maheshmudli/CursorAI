@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var slug = (string)ViewBag.Slug;
+    var isAdmin = ViewBag.IsAdmin == true;
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">@ViewBag.CompanyName</h1>
+        <span class="badge bg-@(ViewBag.Tier == "Pro" ? "success" : "secondary")">@ViewBag.Tier tier</span>
+        <span class="text-muted small">· @ViewBag.SeatAllowance seats</span>
+    </div>
+</div>
+
+@if (ViewBag.Welcome == true)
+{
+    <div class="alert alert-success">
+        <h5 class="mb-1">Your workspace is ready!</h5>
+        Your card was validated and your workspace provisioned. Member sign-in details are below.
+        @if (TempData["MemberCredentials"] is string credsJson && credsJson != "[]")
+        {
+            <table class="table table-sm mt-2 mb-0 bg-white">
+                <thead><tr><th>Name</th><th>Email</th><th>Temporary password</th></tr></thead>
+                <tbody id="credsBody"></tbody>
+            </table>
+            <script>
+                const creds = @Html.Raw(credsJson);
+                document.getElementById('credsBody').innerHTML = creds.map(c =>
+                    `<tr><td>${c.FullName}</td><td>${c.Email}</td><td><code>${c.TempPassword}</code></td></tr>`).join('');
+            </script>
+        }
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">My assigned shifts</div>
+            <div class="card-body p-0"><table class="table mb-0"><thead><tr><th>Date</th><th>Time</th><th>Role</th></tr></thead><tbody id="myShifts"><tr><td colspan="3" class="text-muted p-3">Loading…</td></tr></tbody></table></div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">Upcoming (next <span id="windowDays"></span> days)@(isAdmin ? " — all assignments" : "")</div>
+            <div class="card-body p-0"><table class="table mb-0"><thead><tr><th>Date</th><th>Time</th><th>Role</th><th>Assigned to</th></tr></thead><tbody id="upcoming"><tr><td colspan="4" class="text-muted p-3">Loading…</td></tr></tbody></table></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const apiBase = '/t/@slug/api';
+    function fmtTime(t) { return t ? t.substring(0,5) : ''; }
+    async function load() {
+        const res = await fetch(`${apiBase}/dashboard`);
+        const d = await res.json();
+        document.getElementById('windowDays').textContent = d.upcomingWindowDays;
+        const my = document.getElementById('myShifts');
+        my.innerHTML = d.myShifts.length ? d.myShifts.map(s =>
+            `<tr><td>${s.date}</td><td>${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</td><td>${s.roleLabel}</td></tr>`).join('')
+            : '<tr><td colspan="3" class="text-muted p-3">No shifts assigned to you.</td></tr>';
+        const up = document.getElementById('upcoming');
+        up.innerHTML = d.upcoming.length ? d.upcoming.map(s =>
+            `<tr><td>${s.date}</td><td>${fmtTime(s.startTime)}–${fmtTime(s.endTime)}</td><td>${s.roleLabel}</td><td>${s.assignedUserName || '<span class="text-muted">Unassigned</span>'}</td></tr>`).join('')
+            : '<tr><td colspan="4" class="text-muted p-3">Nothing upcoming in the window.</td></tr>';
+    }
+    load();
+</script>
+}

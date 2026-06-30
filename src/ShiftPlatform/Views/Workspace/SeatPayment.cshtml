@@ -1,0 +1,72 @@
+@model PaymentPageModel
+@{
+    ViewData["Title"] = "Buy seats";
+    var purchaseId = (int)ViewBag.PurchaseId;
+}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h1 class="h3 mb-3">Buy @Model.Seats seat(s)</h1>
+        <p class="text-muted">
+            Adding <strong>@Model.Seats</strong> seat(s) for <strong>@Model.CompanyName</strong> costs
+            <strong>@Model.AmountDisplay</strong> (5.00 AUD per seat). Your allowance increases once payment succeeds.
+        </p>
+
+        @Html.AntiForgeryToken()
+
+        <form id="completeForm" asp-action="CompleteSeat" asp-route-slug="@Model.Slug" asp-route-purchaseId="@purchaseId" method="post"></form>
+
+        <div class="card">
+            <div class="card-body">
+                <div id="messages" class="alert alert-danger d-none"></div>
+                @if (Model.IsLiveStripe)
+                {
+                    <div id="payment-element" class="mb-3"></div>
+                    <button id="payBtn" class="btn btn-primary w-100">Pay @Model.AmountDisplay</button>
+                }
+                else
+                {
+                    <div class="alert alert-warning small"><strong>Developer mode:</strong> simulated payment (configure Stripe for real cards).</div>
+                    <button id="paySuccess" class="btn btn-success w-100 mb-2">Simulate successful payment</button>
+                    <button id="payFail" class="btn btn-outline-danger w-100">Simulate failed payment</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const antiforgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const messages = document.getElementById('messages');
+    const completeForm = document.getElementById('completeForm');
+    function showError(msg) { messages.textContent = msg; messages.classList.remove('d-none'); }
+</script>
+@if (Model.IsLiveStripe)
+{
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe = Stripe('@Model.PublishableKey');
+    const elements = stripe.elements({ clientSecret: '@Model.ClientSecret' });
+    elements.create('payment').mount('#payment-element');
+    document.getElementById('payBtn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        const { error } = await stripe.confirmPayment({ elements, redirect: 'if_required' });
+        if (error) { showError(error.message); return; }
+        completeForm.submit();
+    });
+</script>
+}
+else
+{
+<script>
+    async function simulate(success) {
+        const body = new URLSearchParams({ success, __RequestVerificationToken: antiforgery });
+        const res = await fetch('@Url.Action("ConfirmTestSeat", new { slug = Model.Slug, purchaseId })', { method: 'POST', body });
+        await res.json();
+        completeForm.submit();
+    }
+    document.getElementById('paySuccess').addEventListener('click', (e) => { e.preventDefault(); simulate(true); });
+    document.getElementById('payFail').addEventListener('click', (e) => { e.preventDefault(); simulate(false); });
+</script>
+}
+}

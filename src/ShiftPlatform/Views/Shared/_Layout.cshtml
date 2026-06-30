@@ -1,0 +1,78 @@
+﻿@using System.Security.Claims
+@{
+    var isAuth = User.Identity?.IsAuthenticated == true;
+    var isOwner = User.IsInRole(PlatformConstants.Roles.PlatformOwner);
+    var fullName = User.FindFirst("FullName")?.Value;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ShiftPlatform</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">⏱ ShiftPlatform</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav me-auto">
+                    @if (isOwner)
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="Platform" asp-action="Index">Tenants</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Platform" asp-action="Registrations">Registrations</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Platform" asp-action="Workspaces">Workspaces</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Platform" asp-action="Payments">Payments</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Platform" asp-action="SeatPurchases">Seat purchases</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Platform" asp-action="AccessRecords">Access records</a></li>
+                    }
+                    else if (isAuth && ViewBag.Slug != null)
+                    {
+                        var slug = (string)ViewBag.Slug;
+                        <li class="nav-item"><a class="nav-link" href="/t/@slug/workspace">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/t/@slug/workspace/swaps">Swaps</a></li>
+                        @if (ViewBag.IsAdmin == true)
+                        {
+                            <li class="nav-item"><a class="nav-link" href="/t/@slug/workspace/shifts">Shifts</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/t/@slug/workspace/users">Users</a></li>
+                        }
+                    }
+                </ul>
+                <ul class="navbar-nav">
+                    @if (isAuth)
+                    {
+                        <li class="nav-item d-flex align-items-center text-light me-3">@(fullName ?? User.Identity!.Name)</li>
+                        <li class="nav-item">
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-light btn-sm">Sign out</button>
+                            </form>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">Sign in</a></li>
+                        <li class="nav-item"><a class="btn btn-primary btn-sm ms-2" asp-controller="Register" asp-action="Index">Register company</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        @RenderBody()
+    </main>
+
+    <footer class="border-top text-muted py-3 mt-5">
+        <div class="container small">ShiftPlatform &mdash; multi-tenant shift management demo.</div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
