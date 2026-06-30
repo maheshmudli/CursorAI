@@ -1,0 +1,93 @@
+@model ShiftPlatform.ViewModels.RegisterCompanyViewModel
+@{
+    ViewData["Title"] = "Company Registration";
+    var publishableKey = ViewBag.StripePublishableKey as string ?? "";
+}
+
+<h2>Register Company</h2>
+<p class="text-muted">Includes five users on base tier (admin + up to four additional users).</p>
+
+<form id="registrationForm" asp-action="Index" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="mb-3">
+        <label asp-for="CompanyName" class="form-label"></label>
+        <input asp-for="CompanyName" class="form-control" />
+        <span asp-validation-for="CompanyName" class="text-danger"></span>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="AdminFullName" class="form-label"></label>
+            <input asp-for="AdminFullName" class="form-control" />
+            <span asp-validation-for="AdminFullName" class="text-danger"></span>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label asp-for="AdminEmail" class="form-label"></label>
+            <input asp-for="AdminEmail" class="form-control" />
+            <span asp-validation-for="AdminEmail" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AdminPassword" class="form-label"></label>
+        <input asp-for="AdminPassword" class="form-control" />
+        <span asp-validation-for="AdminPassword" class="text-danger"></span>
+    </div>
+
+    <h5>Additional users (max 4)</h5>
+    @for (var i = 0; i < 4; i++)
+    {
+        <div class="row mb-2">
+            <div class="col-md-6">
+                <input name="Users[@i].FullName" class="form-control" placeholder="Full name" />
+            </div>
+            <div class="col-md-6">
+                <input name="Users[@i].Email" class="form-control" placeholder="Email" />
+            </div>
+        </div>
+    }
+
+    <h5 class="mt-4">Card validation payment (A$1.00)</h5>
+    <div id="card-element" class="form-control"></div>
+    <div id="card-errors" class="text-danger mt-2"></div>
+    <input asp-for="StripePaymentMethodId" type="hidden" id="StripePaymentMethodId" />
+
+    <button id="submitBtn" type="submit" class="btn btn-primary mt-3">Pay and Provision Workspace</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe("@publishableKey");
+        const elements = stripe.elements();
+        const card = elements.create("card");
+        card.mount("#card-element");
+
+        const form = document.getElementById("registrationForm");
+        const submitBtn = document.getElementById("submitBtn");
+        const errorDiv = document.getElementById("card-errors");
+
+        form.addEventListener("submit", async function (event) {
+            if (document.getElementById("StripePaymentMethodId").value) {
+                return;
+            }
+            event.preventDefault();
+            submitBtn.disabled = true;
+            errorDiv.textContent = "";
+
+            const result = await stripe.createPaymentMethod({
+                type: "card",
+                card: card,
+                billing_details: { email: document.getElementById("AdminEmail").value }
+            });
+
+            if (result.error) {
+                errorDiv.textContent = result.error.message;
+                submitBtn.disabled = false;
+                return;
+            }
+
+            document.getElementById("StripePaymentMethodId").value = result.paymentMethod.id;
+            form.submit();
+        });
+    </script>
+}

@@ -1,0 +1,73 @@
+@{
+    ViewData["Title"] = "Workspace";
+    var tenantSlug = ViewBag.TenantSlug as string ?? "";
+}
+
+<h2>Tenant Workspace: @tenantSlug</h2>
+<p class="text-muted">Shift operations call tenant-scoped JSON APIs.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <h5>Create Shift</h5>
+        <form id="createShiftForm">
+            <input type="date" id="shiftDate" class="form-control mb-2" required />
+            <input type="time" id="startTime" class="form-control mb-2" required />
+            <input type="time" id="endTime" class="form-control mb-2" required />
+            <input type="text" id="roleLabel" class="form-control mb-2" placeholder="Role label" required />
+            <textarea id="notes" class="form-control mb-2" placeholder="Notes"></textarea>
+            <button class="btn btn-primary" type="submit">Create shift</button>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <h5>Dashboard (next 4 weeks)</h5>
+        <button id="refreshDashboard" class="btn btn-outline-secondary btn-sm mb-2">Refresh</button>
+        <pre id="dashboardOutput" class="bg-light p-2"></pre>
+    </div>
+</div>
+
+<h5 class="mt-4">Shifts</h5>
+<button id="loadShifts" class="btn btn-outline-secondary btn-sm mb-2">Load shifts</button>
+<pre id="shiftsOutput" class="bg-light p-2"></pre>
+
+<h5 class="mt-4">Swap Requests</h5>
+<button id="loadSwaps" class="btn btn-outline-secondary btn-sm mb-2">Load swaps</button>
+<pre id="swapsOutput" class="bg-light p-2"></pre>
+
+<script>
+    const baseApi = `/t/@tenantSlug/api`;
+
+    document.getElementById("createShiftForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+            date: document.getElementById("shiftDate").value,
+            startTime: document.getElementById("startTime").value,
+            endTime: document.getElementById("endTime").value,
+            roleLabel: document.getElementById("roleLabel").value,
+            notes: document.getElementById("notes").value
+        };
+        const response = await fetch(`${baseApi}/shifts`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        alert(response.ok ? "Shift created" : "Failed");
+    });
+
+    document.getElementById("loadShifts").addEventListener("click", async () => {
+        const response = await fetch(`${baseApi}/shifts`);
+        const data = await response.json();
+        document.getElementById("shiftsOutput").textContent = JSON.stringify(data, null, 2);
+    });
+
+    document.getElementById("loadSwaps").addEventListener("click", async () => {
+        const response = await fetch(`${baseApi}/swaps`);
+        const data = await response.json();
+        document.getElementById("swapsOutput").textContent = JSON.stringify(data, null, 2);
+    });
+
+    document.getElementById("refreshDashboard").addEventListener("click", async () => {
+        const response = await fetch(`${baseApi}/dashboard`);
+        const data = await response.json();
+        document.getElementById("dashboardOutput").textContent = JSON.stringify(data, null, 2);
+    });
+</script>

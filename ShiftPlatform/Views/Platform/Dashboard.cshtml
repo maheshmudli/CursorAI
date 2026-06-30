@@ -1,0 +1,90 @@
+@using ShiftPlatform.Models
+@{
+    ViewData["Title"] = "Platform Owner Dashboard";
+    var registrations = ViewBag.Registrations as List<RegistrationSubmission> ?? new();
+    var provisionings = ViewBag.ProvisioningRecords as List<ProvisioningRecord> ?? new();
+    var payments = ViewBag.Payments as List<PaymentRecord> ?? new();
+    var seatPurchases = ViewBag.SeatPurchases as List<SeatPurchase> ?? new();
+    var accessLogs = ViewBag.AccessLogs as List<AccessLog> ?? new();
+    var tenantSummaries = ViewBag.TenantSummaries as IEnumerable<dynamic> ?? new List<dynamic>();
+}
+
+<h2>Platform Owner Tracking Dashboard</h2>
+
+<h4 class="mt-4">Registrations</h4>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Company</th><th>Admin</th><th>Requested Users</th><th>Status</th><th>Submitted</th></tr></thead>
+    <tbody>
+    @foreach (var item in registrations)
+    {
+        <tr>
+            <td>@item.CompanyName</td><td>@item.AdminEmail</td><td>@item.RequestedUserCount</td><td>@item.Status</td><td>@item.CreatedAt</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<h4 class="mt-4">Provisioned Workspaces</h4>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Tenant</th><th>Route</th><th>Status</th><th>Provisioned</th></tr></thead>
+    <tbody>
+    @foreach (var item in provisionings)
+    {
+        <tr>
+            <td>@item.Tenant?.CompanyName</td><td>@item.Route</td><td>@item.Status</td><td>@item.ProvisionedAt</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<h4 class="mt-4">Validation Payments</h4>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Tenant</th><th>Intent ID</th><th>Amount</th><th>Currency</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody>
+    @foreach (var item in payments)
+    {
+        <tr>
+            <td>@item.Tenant?.CompanyName</td><td>@item.StripePaymentIntentId</td><td>@item.Amount</td><td>@item.Currency</td><td>@item.Status</td><td>@item.CreatedAt</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<h4 class="mt-4">Tenant Seats and Tier</h4>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Tenant</th><th>Tier</th><th>Seat Allowance</th><th>User Count</th></tr></thead>
+    <tbody>
+    @foreach (var item in tenantSummaries)
+    {
+        <tr>
+            <td>@item.Tenant.CompanyName</td><td>@item.Tenant.Tier</td><td>@item.Tenant.SeatAllowance</td><td>@item.UserCount</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<h4 class="mt-4">Seat Purchases</h4>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Tenant</th><th>Intent ID</th><th>Seats</th><th>Amount</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody>
+    @foreach (var item in seatPurchases)
+    {
+        <tr>
+            <td>@item.Tenant?.CompanyName</td><td>@item.StripePaymentIntentId</td><td>@item.SeatsAdded</td><td>@item.Amount</td><td>@item.Status</td><td>@item.CreatedAt</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<h4 class="mt-4">Access Records</h4>
+<table class="table table-sm table-striped">
+    <thead><tr><th>User</th><th>TenantId</th><th>Last Login</th></tr></thead>
+    <tbody>
+    @foreach (var item in accessLogs)
+    {
+        <tr>
+            <td>@item.User?.Email</td><td>@item.TenantId</td><td>@item.LastLoginAt</td>
+        </tr>
+    }
+    </tbody>
+</table>

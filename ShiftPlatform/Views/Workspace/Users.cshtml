@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "Users and Seats";
+    var tenantSlug = ViewBag.TenantSlug as string ?? "";
+}
+
+<h2>User Management</h2>
+<p class="text-muted">Seat allowance is enforced server-side. Extra seats cost A$5 each.</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <h5>Add User</h5>
+        <form id="addUserForm">
+            <input id="fullName" class="form-control mb-2" placeholder="Full Name" required />
+            <input id="email" class="form-control mb-2" placeholder="Email" required />
+            <button class="btn btn-primary" type="submit">Add user</button>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <h5>Purchase Seats</h5>
+        <form id="buySeatForm">
+            <input id="seatCount" type="number" min="1" class="form-control mb-2" value="1" required />
+            <input id="paymentMethodId" class="form-control mb-2" placeholder="Stripe PaymentMethod Id (pm_...)" required />
+            <button class="btn btn-warning" type="submit">Buy seats</button>
+        </form>
+    </div>
+</div>
+
+<h5 class="mt-4">Users</h5>
+<button id="loadUsers" class="btn btn-outline-secondary btn-sm mb-2">Load users</button>
+<pre id="usersOutput" class="bg-light p-2"></pre>
+
+<script>
+    const baseApi = `/t/@tenantSlug/api/users`;
+
+    document.getElementById("addUserForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const response = await fetch(baseApi, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                fullName: document.getElementById("fullName").value,
+                email: document.getElementById("email").value
+            })
+        });
+        const body = await response.json();
+        alert(response.ok ? `User added. Temp password: ${body.temporaryPassword}` : (body.error || "Failed"));
+    });
+
+    document.getElementById("buySeatForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const response = await fetch(`${baseApi}/purchase-seats`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                seatCount: parseInt(document.getElementById("seatCount").value),
+                stripePaymentMethodId: document.getElementById("paymentMethodId").value
+            })
+        });
+        const body = await response.json();
+        alert(response.ok ? `Payment ${body.status} for ${body.seatsAdded} seats.` : (body.error || "Failed"));
+    });
+
+    document.getElementById("loadUsers").addEventListener("click", async () => {
+        const response = await fetch(baseApi);
+        const data = await response.json();
+        document.getElementById("usersOutput").textContent = JSON.stringify(data, null, 2);
+    });
+</script>
