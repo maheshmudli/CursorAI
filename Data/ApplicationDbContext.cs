@@ -45,6 +45,8 @@ public sealed class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasQueryFilter(a => _tenantProvider.TenantId == null || a.TenantId == _tenantProvider.TenantId);
         builder.Entity<SwapRequest>()
             .HasQueryFilter(s => _tenantProvider.TenantId == null || s.TenantId == _tenantProvider.TenantId);
+        builder.Entity<AccessLog>()
+            .HasQueryFilter(l => _tenantProvider.TenantId == null || l.TenantId == _tenantProvider.TenantId);
 
         builder.Entity<ShiftAssignment>()
             .HasIndex(a => new { a.TenantId, a.ShiftId })
