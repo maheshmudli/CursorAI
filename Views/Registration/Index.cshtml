@@ -1,0 +1,81 @@
+@model RegistrationViewModel
+@inject IConfiguration Configuration
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h1>Register company</h1>
+<p class="text-muted">The base plan includes five total users. The registering admin counts as one seat, so this form accepts up to four additional users.</p>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form method="post" id="registration-form">
+    @Html.AntiForgeryToken()
+    <input asp-for="PaymentIntentId" type="hidden" />
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="CompanyName" class="form-label"></label>
+            <input asp-for="CompanyName" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="AdminFullName" class="form-label"></label>
+            <input asp-for="AdminFullName" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="AdminEmail" class="form-label"></label>
+            <input asp-for="AdminEmail" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="AdminPassword" class="form-label"></label>
+            <input asp-for="AdminPassword" class="form-control" />
+        </div>
+    </div>
+
+    <h2 class="h4 mt-4">Additional users</h2>
+    <div class="row g-3">
+        @for (var i = 0; i < Model.Users.Count; i++)
+        {
+            <div class="col-md-6">
+                <label class="form-label">User @(i + 1) full name</label>
+                <input asp-for="Users[i].FullName" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">User @(i + 1) email</label>
+                <input asp-for="Users[i].Email" class="form-control" />
+            </div>
+        }
+    </div>
+
+    <h2 class="h4 mt-4">Validation payment</h2>
+    <p>A 1.00 AUD Stripe PaymentIntent validates the card before provisioning. No raw card data touches this server.</p>
+    <div id="payment-element" class="border rounded p-3"></div>
+    <div id="payment-message" class="text-danger mt-2"></div>
+    <button class="btn btn-primary mt-3" id="submit-button" type="submit">Pay 1.00 AUD and create workspace</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('@Configuration["Stripe:PublishableKey"]');
+        let elements;
+        async function initialisePayment() {
+            const response = await fetch('/registration/createpaymentintent', { method: 'POST' });
+            const data = await response.json();
+            document.querySelector('[name="PaymentIntentId"]').value = data.paymentIntentId;
+            elements = stripe.elements({ clientSecret: data.clientSecret });
+            elements.create('payment').mount('#payment-element');
+        }
+        initialisePayment();
+
+        document.getElementById('registration-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const result = await stripe.confirmPayment({ elements, redirect: 'if_required' });
+            if (result.error) {
+                document.getElementById('payment-message').textContent = result.error.message;
+                return;
+            }
+            event.target.submit();
+        });
+    </script>
+}

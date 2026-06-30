@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="p-5 mb-4 bg-light rounded-3">
+    <h1 class="display-5 fw-bold">Multi-tenant shift management</h1>
+    <p class="lead">Register a company, validate the card with Stripe, and route into an isolated workspace at <code>/t/company-slug</code>.</p>
+    <a class="btn btn-primary btn-lg" asp-controller="Registration" asp-action="Index">Register a company</a>
+    <a class="btn btn-outline-secondary btn-lg" asp-controller="Account" asp-action="Login">Login</a>
+</div>

@@ -1,0 +1,78 @@
+@model PlatformDashboardViewModel
+@{
+    ViewData["Title"] = "Platform dashboard";
+}
+
+<h1>Platform tracking dashboard</h1>
+
+<h2 class="h4 mt-4">Registrations</h2>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Created</th><th>Company</th><th>Admin</th><th>Status</th><th>Users</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.Registrations)
+    {
+        <tr><td>@item.CreatedAt</td><td>@item.CompanyName</td><td>@item.AdminEmail</td><td>@item.Status</td><td>@item.RequestedUserCount</td></tr>
+    }
+    </tbody>
+</table>
+
+<h2 class="h4 mt-4">Workspaces</h2>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Company</th><th>Route</th><th>Tier</th><th>Seats</th><th>Users</th></tr></thead>
+    <tbody>
+    @foreach (var tenant in Model.Tenants)
+    {
+        <tr>
+            <td>@tenant.CompanyName</td>
+            <td><a href="/t/@tenant.Slug">/t/@tenant.Slug</a></td>
+            <td>@tenant.Tier</td>
+            <td>@tenant.SeatAllowance</td>
+            <td>@Model.UserCounts.GetValueOrDefault(tenant.Id)</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<h2 class="h4 mt-4">Provisioning</h2>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Provisioned</th><th>Tenant</th><th>Route</th><th>Status</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.ProvisioningRecords)
+    {
+        <tr><td>@item.ProvisionedAt</td><td>@item.Tenant.CompanyName</td><td>@item.Route</td><td>@item.Status</td></tr>
+    }
+    </tbody>
+</table>
+
+<h2 class="h4 mt-4">Payments</h2>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Created</th><th>Tenant</th><th>Purpose</th><th>Amount</th><th>Currency</th><th>Intent</th><th>Status</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.Payments)
+    {
+        <tr><td>@item.CreatedAt</td><td>@item.Tenant?.CompanyName</td><td>@item.Purpose</td><td>@item.Amount</td><td>@item.Currency</td><td>@item.StripePaymentIntentId</td><td>@item.Status</td></tr>
+    }
+    </tbody>
+</table>
+
+<h2 class="h4 mt-4">Seat purchases</h2>
+<table class="table table-sm table-striped">
+    <thead><tr><th>Created</th><th>Tenant</th><th>Seats</th><th>Amount</th><th>Intent</th><th>Status</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.SeatPurchases)
+    {
+        <tr><td>@item.CreatedAt</td><td>@item.Tenant.CompanyName</td><td>@item.SeatsAdded</td><td>@item.Amount @item.Currency</td><td>@item.StripePaymentIntentId</td><td>@item.Status</td></tr>
+    }
+    </tbody>
+</table>
+
+<h2 class="h4 mt-4">Access logs</h2>
+<table class="table table-sm table-striped">
+    <thead><tr><th>User</th><th>Tenant</th><th>Last login</th></tr></thead>
+    <tbody>
+    @foreach (var item in Model.AccessLogs)
+    {
+        <tr><td>@item.User.FullName</td><td>@item.Tenant?.CompanyName</td><td>@item.LastLoginAt</td></tr>
+    }
+    </tbody>
+</table>

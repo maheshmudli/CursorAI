@@ -1,0 +1,84 @@
+@inject IConfiguration Configuration
+@{
+    ViewData["Title"] = "Users and seats";
+    var slug = ViewContext.RouteData.Values["tenantSlug"]?.ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1>Users and seats</h1>
+    <a class="btn btn-outline-secondary" href="/t/@slug">Dashboard</a>
+</div>
+
+@if (TempData["UserMessage"] is string message)
+{
+    <div class="alert alert-info">@message</div>
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <h2 class="h4">Tenant users</h2>
+        <ul id="users" class="list-group mb-4"></ul>
+
+        <h2 class="h4">Add user</h2>
+        <form method="post" action="/t/@slug/users/add" class="border rounded p-3">
+            @Html.AntiForgeryToken()
+            <label class="form-label">Full name</label>
+            <input class="form-control mb-2" name="FullName" required />
+            <label class="form-label">Email</label>
+            <input class="form-control mb-2" name="Email" type="email" required />
+            <button class="btn btn-primary" type="submit">Add user</button>
+        </form>
+    </div>
+    <div class="col-lg-6">
+        <h2 class="h4">Buy Pro seats</h2>
+        <p>Each seat above the five included seats is a one-off 5.00 AUD charge.</p>
+        <form method="post" action="/t/@slug/users/buy-seats" id="seat-form" class="border rounded p-3">
+            @Html.AntiForgeryToken()
+            <input name="PaymentIntentId" type="hidden" />
+            <label class="form-label">Seats</label>
+            <input class="form-control mb-2" name="Seats" type="number" min="1" value="1" />
+            <div id="seat-payment-element" class="border rounded p-3"></div>
+            <div id="seat-message" class="text-danger mt-2"></div>
+            <button class="btn btn-success mt-3" type="submit">Pay for seats</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const slug = '@slug';
+        const stripe = Stripe('@Configuration["Stripe:PublishableKey"]');
+        let elements;
+        async function loadUsers() {
+            const response = await fetch(`/t/${slug}/api/users`);
+            const data = await response.json();
+            document.getElementById('users').innerHTML = data.map(u => `<li class="list-group-item">${u.fullName} <span class="text-muted">${u.email}</span></li>`).join('');
+        }
+        async function initialiseSeatPayment() {
+            const seats = Number(document.querySelector('[name="Seats"]').value || 1);
+            const response = await fetch(`/t/${slug}/users/seat-intent`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ seats })
+            });
+            const data = await response.json();
+            document.querySelector('[name="PaymentIntentId"]').value = data.paymentIntentId;
+            elements = stripe.elements({ clientSecret: data.clientSecret });
+            document.getElementById('seat-payment-element').innerHTML = '';
+            elements.create('payment').mount('#seat-payment-element');
+        }
+        document.querySelector('[name="Seats"]').addEventListener('change', initialiseSeatPayment);
+        document.getElementById('seat-form').addEventListener('submit', async event => {
+            event.preventDefault();
+            const result = await stripe.confirmPayment({ elements, redirect: 'if_required' });
+            if (result.error) {
+                document.getElementById('seat-message').textContent = result.error.message;
+                return;
+            }
+            event.target.submit();
+        });
+        loadUsers();
+        initialiseSeatPayment();
+    </script>
+}

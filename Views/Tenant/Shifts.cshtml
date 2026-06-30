@@ -1,0 +1,76 @@
+@{
+    ViewData["Title"] = "Shifts";
+    var slug = ViewContext.RouteData.Values["tenantSlug"]?.ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1>Shifts</h1>
+    <a class="btn btn-outline-secondary" href="/t/@slug">Dashboard</a>
+</div>
+
+@if (User.IsInRole(Roles.CompanyAdmin))
+{
+    <form id="shift-form" class="row g-3 border rounded p-3 mb-4">
+        <div class="col-md-2"><label class="form-label">Date</label><input class="form-control" name="date" type="date" required /></div>
+        <div class="col-md-2"><label class="form-label">Start</label><input class="form-control" name="startTime" type="time" required /></div>
+        <div class="col-md-2"><label class="form-label">End</label><input class="form-control" name="endTime" type="time" required /></div>
+        <div class="col-md-3"><label class="form-label">Role</label><input class="form-control" name="roleLabel" required /></div>
+        <div class="col-md-3"><label class="form-label">Notes</label><input class="form-control" name="notes" /></div>
+        <div class="col-12"><button class="btn btn-primary" type="submit">Create shift</button></div>
+    </form>
+}
+
+<table class="table table-striped" id="shift-table">
+    <thead><tr><th>Date</th><th>Time</th><th>Role</th><th>Assigned</th><th>Assign</th><th></th></tr></thead>
+    <tbody></tbody>
+</table>
+
+@section Scripts {
+    <script>
+        const slug = '@slug';
+        const isAdmin = @Json.Serialize(User.IsInRole(Roles.CompanyAdmin));
+        let users = [];
+        async function loadUsers() {
+            const response = await fetch(`/t/${slug}/api/users`);
+            users = await response.json();
+        }
+        async function loadShifts() {
+            const response = await fetch(`/t/${slug}/api/shifts`);
+            const shifts = await response.json();
+            document.querySelector('#shift-table tbody').innerHTML = shifts.map(s => `
+                <tr>
+                    <td>${s.date}</td><td>${s.startTime}-${s.endTime}</td><td>${s.roleLabel}</td><td>${s.assignedUserName ?? ''}</td>
+                    <td>${isAdmin ? `<select class="form-select form-select-sm" onchange="assignShift(${s.id}, this.value)"><option value="">Assign...</option>${users.map(u => `<option value="${u.id}">${u.fullName}</option>`).join('')}</select>` : ''}</td>
+                    <td>${isAdmin ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteShift(${s.id})">Delete</button>` : ''}</td>
+                </tr>`).join('');
+        }
+        async function assignShift(id, userId) {
+            if (!userId) return;
+            await fetch(`/t/${slug}/api/shifts/${id}/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            await loadShifts();
+        }
+        async function deleteShift(id) {
+            await fetch(`/t/${slug}/api/shifts/${id}`, { method: 'DELETE' });
+            await loadShifts();
+        }
+        const form = document.getElementById('shift-form');
+        if (form) {
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                const data = Object.fromEntries(new FormData(event.target));
+                await fetch(`/t/${slug}/api/shifts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                event.target.reset();
+                await loadShifts();
+            });
+        }
+        loadUsers().then(loadShifts);
+    </script>
+}
