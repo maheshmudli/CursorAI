@@ -55,6 +55,19 @@ public class RegisterController : Controller
             .Where(m => !string.IsNullOrWhiteSpace(m.FullName) || !string.IsNullOrWhiteSpace(m.Email))
             .ToList() ?? new List<NewUserInput>();
 
+        // Blank member rows (e.g. the starter row) are dropped above, so clear
+        // their [Required] errors from ModelState and re-validate only the rows
+        // the user actually filled in.
+        foreach (var key in ModelState.Keys.Where(k => k.StartsWith("Members")).ToList())
+            ModelState.Remove(key);
+        for (var i = 0; i < input.Members.Count; i++)
+        {
+            if (string.IsNullOrWhiteSpace(input.Members[i].FullName))
+                ModelState.AddModelError($"Members[{i}].FullName", "Member full name is required.");
+            if (string.IsNullOrWhiteSpace(input.Members[i].Email))
+                ModelState.AddModelError($"Members[{i}].Email", "Member email is required.");
+        }
+
         // Server-side free-tier cap: admin counts as one of the five seats, so
         // at most four additional members may be added at registration.
         var totalUsers = 1 + input.Members.Count;
