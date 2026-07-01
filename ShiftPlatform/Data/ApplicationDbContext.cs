@@ -43,6 +43,18 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasForeignKey(s => s.TargetAssignmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Entity<SwapRequest>()
+            .HasOne(s => s.RequestingUser)
+            .WithMany()
+            .HasForeignKey(s => s.RequestingUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<SwapRequest>()
+            .HasOne(s => s.TargetUser)
+            .WithMany()
+            .HasForeignKey(s => s.TargetUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Entity<Shift>()
             .HasQueryFilter(x => !tenantContext.CurrentTenantId.HasValue || x.TenantId == tenantContext.CurrentTenantId.Value);
         builder.Entity<ShiftAssignment>()

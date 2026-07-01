@@ -373,13 +373,13 @@ namespace ShiftPlatform.Data.Migrations
                         column: x => x.RequestingUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SwapRequests_AspNetUsers_TargetUserId",
                         column: x => x.TargetUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SwapRequests_ShiftAssignments_RequestingAssignmentId",
                         column: x => x.RequestingAssignmentId,

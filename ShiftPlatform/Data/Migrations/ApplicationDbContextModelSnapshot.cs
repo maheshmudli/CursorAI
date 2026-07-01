@@ -712,7 +712,7 @@ namespace ShiftPlatform.Data.Migrations
                     b.HasOne("ShiftPlatform.Models.ApplicationUser", "RequestingUser")
                         .WithMany()
                         .HasForeignKey("RequestingUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ShiftPlatform.Models.ShiftAssignment", "TargetAssignment")
@@ -724,7 +724,7 @@ namespace ShiftPlatform.Data.Migrations
                     b.HasOne("ShiftPlatform.Models.ApplicationUser", "TargetUser")
                         .WithMany()
                         .HasForeignKey("TargetUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("RequestingAssignment");
