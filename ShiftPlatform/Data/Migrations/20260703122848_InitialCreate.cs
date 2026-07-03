@@ -32,10 +32,15 @@ namespace ShiftPlatform.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CompanyName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Slug = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    MobileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     Tier = table.Column<int>(type: "int", nullable: false),
-                    SeatAllowance = table.Column<int>(type: "int", nullable: false)
+                    SeatAllowance = table.Column<int>(type: "int", nullable: false),
+                    PrimaryColor = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SecondaryColor = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FontFamily = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "Aptos"),
+                    LogoPath = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -68,9 +73,10 @@ namespace ShiftPlatform.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    IsStaff = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    MustChangePassword = table.Column<bool>(type: "bit", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -373,13 +379,13 @@ namespace ShiftPlatform.Data.Migrations
                         column: x => x.RequestingUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SwapRequests_AspNetUsers_TargetUserId",
                         column: x => x.TargetUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_SwapRequests_ShiftAssignments_RequestingAssignmentId",
                         column: x => x.RequestingAssignmentId,

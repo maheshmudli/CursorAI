@@ -47,6 +47,7 @@ public static class SeedData
                 Id = Guid.NewGuid(),
                 CompanyName = "SampleCo",
                 Slug = "sampleco",
+                Status = TenantStatus.Approved,
                 Tier = TenantTier.Base,
                 SeatAllowance = 5
             };

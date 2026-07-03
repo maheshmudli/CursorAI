@@ -1,10 +1,16 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using ShiftPlatform.Constants;
 using ShiftPlatform.Data;
 using ShiftPlatform.Models;
 using ShiftPlatform.Options;
 using ShiftPlatform.Services;
+
+var australianCulture = new CultureInfo("en-AU");
+CultureInfo.DefaultThreadCurrentCulture = australianCulture;
+CultureInfo.DefaultThreadCurrentUICulture = australianCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +37,12 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<IStripePaymentService, StripePaymentService>();
 builder.Services.AddScoped<IProvisioningService, ProvisioningService>();
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(australianCulture);
+    options.SupportedCultures = [australianCulture];
+    options.SupportedUICultures = [australianCulture];
+});
 
 var app = builder.Build();
 
@@ -42,6 +54,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseRequestLocalization();
 app.UseRouting();
 app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthentication();
