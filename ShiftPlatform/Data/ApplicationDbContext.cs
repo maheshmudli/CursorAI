@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using System.Reflection;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ShiftPlatform.Models;
@@ -43,14 +45,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasForeignKey(s => s.TargetAssignmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Entity<Shift>()
-            .HasQueryFilter(x => !tenantContext.CurrentTenantId.HasValue || x.TenantId == tenantContext.CurrentTenantId.Value);
-        builder.Entity<ShiftAssignment>()
-            .HasQueryFilter(x => !tenantContext.CurrentTenantId.HasValue || x.TenantId == tenantContext.CurrentTenantId.Value);
-        builder.Entity<SwapRequest>()
-            .HasQueryFilter(x => !tenantContext.CurrentTenantId.HasValue || x.TenantId == tenantContext.CurrentTenantId.Value);
-        builder.Entity<AccessLog>()
-            .HasQueryFilter(x => !tenantContext.CurrentTenantId.HasValue || x.TenantId == tenantContext.CurrentTenantId.Value);
+        foreach (var entityType in builder.Model.GetEntityTypes()
+                     .Where(entityType => typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType)))
+        {
+            var method = typeof(ApplicationDbContext)
+                .GetMethod(nameof(ConfigureTenantQueryFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                .MakeGenericMethod(entityType.ClrType);
+            method.Invoke(this, [builder]);
+        }
 
         builder.Entity<PaymentRecord>()
             .HasIndex(p => p.StripePaymentIntentId)
@@ -58,6 +60,19 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         builder.Entity<SeatPurchase>()
             .HasIndex(s => s.StripePaymentIntentId)
             .IsUnique();
+    }
+
+    private void ConfigureTenantQueryFilter<TEntity>(ModelBuilder builder)
+        where TEntity : class, ITenantEntity
+    {
+        builder.Entity<TEntity>().HasQueryFilter(BuildTenantFilter<TEntity>());
+    }
+
+    private Expression<Func<TEntity, bool>> BuildTenantFilter<TEntity>()
+        where TEntity : class, ITenantEntity
+    {
+        return entity => !tenantContext.CurrentTenantId.HasValue ||
+                         entity.TenantId == tenantContext.CurrentTenantId.Value;
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

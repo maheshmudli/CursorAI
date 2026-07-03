@@ -38,7 +38,7 @@ The base plan includes **five total users including the admin**:
 
 - Tenant-owned records carry `TenantId`
 - Global query filters are applied to tenant-owned entities in `ApplicationDbContext`
-- Tenant resolved from path by `TenantResolutionMiddleware`
+- Tenant resolved from path by `TenantResolverService` via `TenantResolutionMiddleware`
 - All tenant APIs validate route slug against resolved tenant context
 
 ## Stripe Flows

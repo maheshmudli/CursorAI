@@ -28,6 +28,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddScoped<ITenantResolverService, TenantResolverService>();
 builder.Services.AddScoped<IStripePaymentService, StripePaymentService>();
 builder.Services.AddScoped<IProvisioningService, ProvisioningService>();
 builder.Services.AddControllersWithViews();
@@ -47,6 +48,8 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Parent platform routes (/, /Registration, /Account/Login, etc.) use the default route.
+// Tenant workspace routes use /t/{tenant-slug}/{controller}/{action}.
 app.MapControllerRoute(
     name: "tenant",
     pattern: "t/{tenantSlug}/{controller=Workspace}/{action=Index}/{id?}");
