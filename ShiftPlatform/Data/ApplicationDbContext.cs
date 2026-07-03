@@ -25,6 +25,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
         builder.Entity<Tenant>().HasIndex(t => t.Slug).IsUnique();
         builder.Entity<ApplicationUser>().HasIndex(u => new { u.TenantId, u.Email });
+        builder.Entity<ApplicationUser>().Property(u => u.IsStaff).HasDefaultValue(true);
+        builder.Entity<Tenant>().Property(t => t.FontFamily).HasDefaultValue("Aptos");
 
         builder.Entity<ShiftAssignment>()
             .HasOne(a => a.Shift)
@@ -41,6 +43,18 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .HasOne(s => s.TargetAssignment)
             .WithMany()
             .HasForeignKey(s => s.TargetAssignmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<SwapRequest>()
+            .HasOne(s => s.RequestingUser)
+            .WithMany()
+            .HasForeignKey(s => s.RequestingUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<SwapRequest>()
+            .HasOne(s => s.TargetUser)
+            .WithMany()
+            .HasForeignKey(s => s.TargetUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Entity<Shift>()

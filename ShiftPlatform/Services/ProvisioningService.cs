@@ -47,7 +47,7 @@ public class ProvisioningService(
             CreatedAt = DateTime.UtcNow,
             Tier = TenantTier.Base,
             SeatAllowance = 5,
-            Status = "Active"
+            Status = TenantStatus.Approved
         };
 
         await using var tx = await dbContext.Database.BeginTransactionAsync();
